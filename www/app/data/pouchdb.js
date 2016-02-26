@@ -60,21 +60,11 @@
 		}
 
 		function _save(jsonDocument) {
-			var deferred = $q.defer();
 			if(!jsonDocument._id) {
-				database.post(jsonDocument).then(function(response) {
-					deferred.resolve(response);
-				}).catch(function(error) {
-					deferred.reject(error);
-				});
-			} else {
-				database.put(jsonDocument).then(function(response) {
-					deferred.resolve(response);
-				}).catch(function(error) {
-					deferred.reject(error);
-				});
+				return database.post(jsonDocument);
+			} else {                
+				return database.put(jsonDocument);
 			}
-			return deferred.promise;
 		}
 
 		function _delete(documentId, documentRevision) {

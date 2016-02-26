@@ -12,6 +12,9 @@
 		// Define the constructor function.
 		function Player( doc ) {
 			var self = this;
+            self.type = "Player";
+            self.id = doc._id || "";
+            self.rev = doc._rev || "";
 			self.FirstName = doc.FirstName || "";
 			self.LastName = doc.LastName || "";
 			self.GradYr = doc.GradYr || "";

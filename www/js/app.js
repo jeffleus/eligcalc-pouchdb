@@ -23,10 +23,10 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data'])
   });
 })
 
-.run(function(dataservice) {
-	dataservice.getPlayers().then(function(players) {
-		console.log('Players: ' + players.length);
-	});
+.run(function($pouch, dataservice, PlayerMock) {
+//	dataservice.getPlayers().then(function(players) {
+//		console.log('Players: ' + players.length);
+//	});
 });
 //.run(function($pouch, PlayerMock, Player) {
 //	console.log('setting database');
@@ -39,42 +39,42 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data'])
 ////	});
 //
 //	
-////	var designDoc = {
-////	  _id: '_design/player_idx',
-////	  views: {
-////		'player_idx': {
-////		  map: function(doc) {
-////			  if (doc.type === 'Player' ) {
-////				  emit(doc.name);
-////			  }
-////		  }.toString()
-////		}
-////	  }
-////	};
-////	console.info('Create Player Index...');
-////	$pouch.db().put(designDoc).then(function (info) {
-////	 // design doc created
-////		console.info('Idx Created: ' + info);	
-////	}).catch(function (err) {
-////	   if (err.name === 'conflict') {
-////		console.warn('Idx already exists...');
-////	   } else {
-////		console.error('Idx Error: ' + err);
-////	   }
-////	  // design doc already exists
-////	});
+//	var designDoc = {
+//	  _id: '_design/player_idx',
+//	  views: {
+//		'player_idx': {
+//		  map: function(doc) {
+//			  if (doc.type === 'Player' ) {
+//				  emit(doc.name);
+//			  }
+//		  }.toString()
+//		}
+//	  }
+//	};
+//	console.info('Create Player Index...');
+//	$pouch.db().put(designDoc).then(function (info) {
+//	 // design doc created
+//		console.info('Idx Created: ' + info);	
+//	}).catch(function (err) {
+//	   if (err.name === 'conflict') {
+//		console.warn('Idx already exists...');
+//	   } else {
+//		console.error('Idx Error: ' + err);
+//	   }
+//	  // design doc already exists
+//	});
 //
 //	
 //	
 //	
-////	var p = PlayerMock.players[4];
-////	p.type = 'Player';
-////	console.log('saving player[0]: ' + p.FirstName + ' ' + p.LastName);	
-////	$pouch.save(p).then(function(response) {
-////		console.log('saved: ' + response);
-////	}).catch(function(error) {
-////		console.error('error saving: ' + error);
-////	});
+//	var p = PlayerMock.players[4];
+//	p.type = 'Player';
+//	console.log('saving player[0]: ' + p.FirstName + ' ' + p.LastName);	
+//	$pouch.save(p).then(function(response) {
+//		console.log('saved: ' + response);
+//	}).catch(function(error) {
+//		console.error('error saving: ' + error);
+//	});
 //	
 ////	console.info('start allDocs qry');
 ////	$pouch.db().allDocs().then(function(resp) {
