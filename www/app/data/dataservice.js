@@ -6,13 +6,11 @@
         .module('eligcalc.data')
         .service('dataservice', dataservice);
 
-	dataservice.$inject = ['$pouch', 'Player'];
+	dataservice.$inject = ['$pouch', 'Player', 'Transcript', 'Course'];
 	
-    function dataservice($pouch, Player) { 
-		var isPrimed = false;
-		var primePromise;
-
+    function dataservice($pouch, Player, Transcript, Course) { 
 		var service = {
+            sync: _sync,
 			getPlayers: _getPlayers,
             addPlayer: _addPlayer,
             deletePlayer: _deletePlayer, 
@@ -23,18 +21,21 @@
 		};
 
 		return service;
-
-		////////////
-
-        function _getEntities(view, entity) {
+    ////////////
+        function _sync() {
+            var options = { start: true, remoteDatabase: 'http://localhost:5984/eligcalc' };
+            $pouch.sync(options);
+        }
+        
+        function _getEntities(view, Entity) {
 			// implementation details go here
 			console.info('start qry view: ' + view);
 			return $pouch.db().query(view, {include_docs:true}).then(function(result) {
 			 	// do something with result
-				console.log('Entities found: ' + result.total_rows);
+				console.log(Entity.name + 'Entities found: ' + result.total_rows);
 				var entities = [];
 				result.rows.forEach(function(r) {
-					var e = new entity(r.doc);
+					var e = new Entity(r.doc);
 					entities.push(e);
 					console.log('Entity: ' + angular.toJson(e));
 				});
@@ -46,23 +47,7 @@
         }
         
 		function _getPlayers() {
-//            return _getEntities('player_idx', Player);
-			// implementation details go here
-			console.info('start player qry');
-			return $pouch.db().query('player_idx', {include_docs:true}).then(function(result) {
-			 	// do something with result
-				console.log('Players found: ' + result.total_rows);
-				var players = [];
-				result.rows.forEach(function(r) {
-					var p = new Player(r.doc);
-					players.push(p);
-					console.log('Player: ' + p.FirstName + ' ' + p.LastName);		
-				});
-				return players;
-			}).catch(function(error) {
-				console.error(error);
-				return null;
-			});
+            return _getEntities('player_idx', Player);
 		}
         
         function _addPlayer(p) {
@@ -74,7 +59,7 @@
                 return p;
             }).catch(function(err) {
                 console.error(err);
-            })
+            });
         }
         
         function _deletePlayer(p) {
@@ -82,15 +67,15 @@
                 console.log(resp);
             }).catch(function(err) {
                 console.error(err);
-            })
+            });
         }
 
 		function _getTranscripts() {
-			// implementation details go here
+            return _getEntities('transcript_idx', Transcript);
 		}
 
 		function _getCourses() {
-			// implementation details go here
+            return _getEntities('course_idx', Course);
 		}
 
 		function _getLookups() {

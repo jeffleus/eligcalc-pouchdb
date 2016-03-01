@@ -15,6 +15,7 @@
     <!-- ionic/angularjs js -->
     <script src="lib/ionic/js/ionic.bundle.js"></script>
     <script src="lib/pouchdb-5.2.1.min.js"></script>
+    <script src="lib/underscore-min.js"></script>
 
     <!-- cordova script (this will be a 404 during development) -->
     <script src="cordova.js"></script>
@@ -25,11 +26,19 @@
     <script src="app/data/data.module.js"></script>
     <script src="app/data/pouchdb.js"></script>
     <script src="app/data/playerMock.js"></script>
-    <script src="app/data/player.js"></script>
     <script src="app/data/dataservice.js"></script>
     <script src="app/data/modelservice.js"></script>
       
-    <script src="app/players.js"></script>
+    <script src="app/data/model/model.module.js"></script>
+    <script src="app/data/model/player.js"></script>
+    <script src="app/data/model/transcript.js"></script>
+    <script src="app/data/model/course.js"></script>
+      
+    <script src="app/data/model/lookups/subject.type.js"></script>      
+    <script src="app/data/model/lookups/term.type.js"></script>      
+    <script src="app/data/model/lookups/grade.type.js"></script>      
+
+      <script src="app/players.js"></script>
   </head>
   <body ng-app="eligcalc">
 
