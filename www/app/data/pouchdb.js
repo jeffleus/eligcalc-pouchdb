@@ -6,11 +6,13 @@
         .module('eligcalc.data')
         .service('$pouch', pouch);
 	
-	pouch.$inject = ['$q'];
+	pouch.$inject = ['$q', '$rootScope'];
 
-    function pouch($q) { 
-		var self = this;
+    function pouch($q, $rootScope) { 
+        /*jshint validthis: true*/
+        var self = this;
 		var database;
+        var sync;
 		var changeListener;
 		
 		var service = {
@@ -44,19 +46,35 @@
 				include_docs: true
 			}).on("change", function(change) {
 				if(!change.deleted) {
-					$rootScope.$broadcast("$pouchDB:change", change);
+                    console.log('document changed...');
+                    console.log(change);
+					$rootScope.$broadcast("$pouchDB:change", change.doc);
 				} else {
+                    console.log('document deleted...');
+                    console.log(change);
 					$rootScope.$broadcast("$pouchDB:delete", change);
 				}
-			});
+			}).on("complete", function(info) {
+                console.info('$pouch complete event...');
+                console.info(info);
+            }).on("error", function(error) {
+                console.warn('$pouch error event...');
+                console.error(error);
+            });
 		}
 
 		function _stopListening() {
 			changeListener.cancel();
 		}
 
-		function _sync(remoteDatabase) {
-			database.sync(remoteDatabase, {live: true, retry: true});
+		function _sync(options) {
+            if (options.start) {
+                console.log('start sync with server: ' + options.remoteDatabase);
+                sync = _getDatabase().sync('http://localhost:5984/eligcalc', {live: true, retry: true});                
+            } else {
+                console.log('cancel sync with server: ' + options.remoteDatabase);
+                sync.cancel();
+            }
 		}
 
 		function _save(jsonDocument) {
@@ -68,7 +86,7 @@
 		}
 
 		function _delete(documentId, documentRevision) {
-			return database.remove(documentId, documentRevision);
+			return _getDatabase().remove(documentId, documentRevision);
 		}
 
 		function _get(documentId) {

@@ -3,18 +3,22 @@
     'use strict';
 
     angular
-        .module('eligcalc.data')
+        .module('eligcalc.model')
         .controller('Players', Players);
 
-	Players.$inject = ['$scope', 'modelservice', 'Player', 'PlayerMock'];
+	Players.$inject = ['$scope', '$pouch', 'modelservice', 'Player', 'PlayerMock'];
 	
-    function Players($scope, modelservice, Player, PlayerMock) {
+    function Players($scope, $pouch, modelservice, Player, PlayerMock) {
         var self = this;
         self.modelSvc = modelservice;    
         self.addPlayer = _addPlayer;
         self.deletePlayer = _deletePlayer;
 
         $scope.$on('modelservice::players_loaded', function() {
+            $scope.$apply();
+            $pouch.startListening();
+        });
+        $scope.$on('modelservice::players_updated', function() {
             $scope.$apply();
         });
 

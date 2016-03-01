@@ -3,7 +3,7 @@
     'use strict';
 
     angular
-        .module('eligcalc.data')
+        .module('eligcalc.model')
         .factory('Player', Player);
 
 //	Player.$inject = ['$pouch'];
