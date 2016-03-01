@@ -3,7 +3,7 @@
 // angular.module is a global place for creating, registering and retrieving Angular modules
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
-angular.module('eligcalc', ['ionic', 'eligcalc.data'])
+angular.module('eligcalc', ['ionic', 'eligcalc.data', 'eligcalc.model'])
 
 .run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
@@ -23,50 +23,84 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data'])
   });
 })
 
-.run(function($pouch, dataservice, PlayerMock) {
+.run(function($pouch, dataservice, PlayerMock, SUBJECTS, TERMS, GRADES) {
+    console.log(SUBJECTS);
+    console.log(TERMS);
+    console.log(GRADES);
+});
+
+//// initPlayers and log the count of Player objects
+//.run(function(dataservice) {
 //	dataservice.getPlayers().then(function(players) {
 //		console.log('Players: ' + players.length);
 //	});
-});
-//.run(function($pouch, PlayerMock, Player) {
-//	console.log('setting database');
-//	$pouch.setDatabase('eligcalc');
-//	
-////	$pouch.destroy().then(function(resp) {
-////		console.info('db destroyed: ' + resp);
-////	}).catch(function(error) {
-////		console.error('err destroying: ' + error);
-////	});
+//})
+
+// Database Initialization
+//*************************
+// init database
+// destroy database
 //
+//.run(function($pouch) {
+////	console.log('setting database');
+////	$pouch.setDatabase('eligcalc');
 //	
+//	console.log('destroying database');
+//	$pouch.destroy().then(function(resp) {
+//		console.info('db destroyed: ' + resp);
+//	}).catch(function(error) {
+//		console.error('err destroying: ' + error);
+//	});
+//})
+
+// View Creation
+//*************************
+// make sure to match view _id and name for ease of use
+//
+//.run(function($pouch) {
+//    var docType = 'Transcript';
 //	var designDoc = {
-//	  _id: '_design/player_idx',
+//	  _id: '_design/transcript_idx',
 //	  views: {
-//		'player_idx': {
+//		'transcript_idx': {
 //		  map: function(doc) {
-//			  if (doc.type === 'Player' ) {
+//			  if (doc.type === 'docType' ) {
 //				  emit(doc.name);
 //			  }
-//		  }.toString()
+//		  }.toString().replace("docType", docType)
 //		}
 //	  }
 //	};
-//	console.info('Create Player Index...');
+//	console.info('Create Index: ' + docType);
 //	$pouch.db().put(designDoc).then(function (info) {
-//	 // design doc created
+//	   // design doc created
 //		console.info('Idx Created: ' + info);	
 //	}).catch(function (err) {
+//	  // design doc already exists
 //	   if (err.name === 'conflict') {
 //		console.warn('Idx already exists...');
 //	   } else {
 //		console.error('Idx Error: ' + err);
 //	   }
-//	  // design doc already exists
-//	});
+//	});    
+//})
+
+// Database Replication
+//*************************
+// force replication local --> server
+// force replication server --> local
 //
+//.run(function($pouch) {
+////    PouchDB.replicate('eligcalc', 'http://localhost:5984/eligcalc', {live: true});    
+//    PouchDB.replicate('http://localhost:5984/eligcalc', 'eligcalc', {live: true});    
+//})
+
+// Player Init w/ Mock Data
+//*************************
+// save to pouchDb
 //	
-//	
-//	
+//.run(function($pouch, PlayerMock) {
+//    //grab a player from the PlayerMock created from Parse export
 //	var p = PlayerMock.players[4];
 //	p.type = 'Player';
 //	console.log('saving player[0]: ' + p.FirstName + ' ' + p.LastName);	
@@ -75,55 +109,54 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data'])
 //	}).catch(function(error) {
 //		console.error('error saving: ' + error);
 //	});
+//})
+
 //	
-////	console.info('start allDocs qry');
-////	$pouch.db().allDocs().then(function(resp) {
-////		console.log('AllDocs: ' + resp.total_rows);
-////		console.log(resp);
-////	}).catch(function(error) {
-////		console.error(error);
-////	});
-////
-////	console.info('start player qry');
-////	$pouch.db().query('player_idx', {include_docs:true}).then(function(result) {
-////	 // do something with result
-////		result.rows.forEach(function(r) {
-////			var p = new Player(r.doc);
-////			console.log('Player: ' + p.FirstName + ' ' + p.LastName);		
-////		});
-////	}).catch(function(error) {
-////		console.error(error);
-////	});
-//	
-////	function map(doc) {
-////		// sort by last name, first name, and age
-////		if (doc.type === 'Prospect') {
-////			emit([doc.LastName, doc.FirstName, doc.GradYr]);
-////		}
-////	}
-////	console.info('start Prospect qry');
-////	$pouch.db().query(map).then(function (result) {
-////	  // handle result
-////		console.log(result);
-////	}).catch(function (err) {
-////	  console.log(err);
-////	});
+// Query Players and Hyrdrate
+//****************************
+// use the player_idx view to get all player docs by type
+// use the Player factory to hydrate each record
 //
+//.run(function($pouch, Player) {
+//	console.info('start player qry');
+//	$pouch.db().query('player_idx', {include_docs:true}).then(function(result) {
+//        //loop the results and hydrate a Player object for each row
+//        var players = [];
+//		result.rows.forEach(function(r) {
+//			var p = new Player(r.doc);            
+//			console.log('Player: ' + p.FirstName + ' ' + p.LastName);		
+//		});
+//	}).catch(function(error) {
+//		console.error(error);
+//	});
+//})
+
 //	
-////	
-////	console.info('start alldocs qry');
-////	$pouch.db().allDocs().then(function(resp) {
-////		console.log('AllDocs: ' + resp.total_rows);
-////	}).catch(function(error) {
-////		console.error(error);
-////	});
-////	
-////	var _id = '290919BC-8ACB-AEB4-B9F4-4082415912A7';
-////	var _rev = '1-a5d420432900c29caa2de2dd87cc2b7a';
-////	$pouch.delete(_id, _rev).then(function(resp) {
-////		console.log('get Result: ');
-////		console.log(resp);
-////	}).catch(function(error) {
-////		console.error(error);
-////	});
+// Query AllDocs for count of Docs
+//*************************
+//	
+//.run(function($pouch) {
+//	console.info('start alldocs qry');
+//	$pouch.db().allDocs().then(function(resp) {
+//		console.log('AllDocs: ' + resp.total_rows);
+//	}).catch(function(error) {
+//		console.error(error);
+//	});
+//})
+
+// Delete Player using Id and Rev
+//*************************
+// get _id and _rev from a separate qry or fauxton UI
+//	
+//.run(function($pouch) {
+//	var _id = '216D1E46-54A7-203C-9DE8-504509D1078F';
+//	var _rev = '5-eb05602919e272d146855306a0b69c05';
+//	$pouch.delete(_id, _rev).then(function(resp) {
+//		console.log('delete Result...');
+//		console.log(resp);
+//	}).catch(function(error) {
+//        //error in the delete call
+//        console.warn('There was an error deleting doc...');
+//		console.error(error);
+//	});
 //})
