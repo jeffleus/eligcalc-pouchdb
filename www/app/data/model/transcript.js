@@ -10,7 +10,7 @@
 	
     function Transcript() { 
 		// Define the constructor function.
-		function Transcript( doc ) {
+		function Ctor( doc ) {
 			var self = this;
             self.type = "Transcript";
             self.id = doc._id || "";

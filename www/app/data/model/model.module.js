@@ -5,4 +5,4 @@
     angular
         .module('eligcalc.model', []);
 
-})()
+})();

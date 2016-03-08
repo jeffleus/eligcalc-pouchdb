@@ -8,7 +8,7 @@
 
 	dataservice.$inject = ['$pouch', 'Player', 'Transcript', 'Course'];
 	
-    function dataservice($pouch, Player, Transcript, Course) { 
+    function dataservice($console, $pouch, Player, Transcript, Course) { 
 		var service = {
             sync: _sync,
 			getPlayers: _getPlayers,
@@ -29,19 +29,19 @@
         
         function _getEntities(view, Entity) {
 			// implementation details go here
-			console.info('start qry view: ' + view);
+			$console.info('start qry view: ' + view);
 			return $pouch.db().query(view, {include_docs:true}).then(function(result) {
 			 	// do something with result
-				console.log(Entity.name + 'Entities found: ' + result.total_rows);
+				$console.log(Entity.name + 'Entities found: ' + result.total_rows);
 				var entities = [];
 				result.rows.forEach(function(r) {
 					var e = new Entity(r.doc);
 					entities.push(e);
-					console.log('Entity: ' + angular.toJson(e));
+					$console.log('Entity: ' + angular.toJson(e));
 				});
 				return entities;
 			}).catch(function(error) {
-				console.error(error);
+				$console.error(error);
 				return null;
 			});            
         }
@@ -55,18 +55,18 @@
             return $pouch.save(p).then(function(resp) {
                 p.id = resp.id;
                 p.rev = resp.rev;
-                console.log(resp);
+                $console.log(resp);
                 return p;
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });
         }
         
         function _deletePlayer(p) {
             return $pouch.delete(p.id, p.rev).then(function(resp) {
-                console.log(resp);
+                $console.log(resp);
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });
         }
 

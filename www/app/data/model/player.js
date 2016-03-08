@@ -7,10 +7,10 @@
         .factory('Player', Player);
 
 //	Player.$inject = ['$pouch'];
-	
+
     function Player() { 
 		// Define the constructor function.
-		function Player( doc ) {
+		function Ctor( doc ) {
 			var self = this;
             self.type = "Player";
             self.id = doc._id || "";

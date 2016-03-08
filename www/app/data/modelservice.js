@@ -8,7 +8,7 @@
 
 	modelservice.$inject = ['$rootScope', 'dataservice', 'Player'];
 	
-    function modelservice($rootScope, dataservice, Player) {
+    function modelservice($rootScope, $console, dataservice, Player) {
         /*jshint validthis: true*/
         var self = this;
         var players;
@@ -36,7 +36,6 @@
             }
         });
 
-        
         _init();        
         function _init() {
             _initPlayers()
@@ -50,36 +49,36 @@
                 self.players = players;
                 $rootScope.$broadcast('modelservice::players_loaded');
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });        
         }
-        
+
         function _initTranscripts() {
             return dataservice.getTranscripts().then(function(transcripts) {
                 self.transcripts = transcripts;
                 $rootScope.$broadcast('modelservice::transcripts_loaded');
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });
         }
-        
+
         function _initCourses() {
             return dataservice.getCourses().then(function(courses) {
                 self.courses = courses;
                 $rootScope.$broadcast('modelservice::courses_loaded');
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });
         }
-        
+
         function _addPlayer(p) {
             return dataservice.addPlayer(p).then(function(resp) {
                 self.players.push(p);
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });
         }
-        
+
         function _deletePlayer(p) {
             //delete from the database using dataservice
             return dataservice.deletePlayer(p).then(function(deletedP) {
@@ -87,7 +86,7 @@
                 var index = self.players.indexOf(p);
                 if (index>=0) self.players.splice(index, 1);
             }).catch(function(err) {
-                console.error(err);
+                $console.error(err);
             });      
         }
     }

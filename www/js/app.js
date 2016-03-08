@@ -5,9 +5,9 @@
 // the 2nd parameter is an array of 'requires'
 angular.module('eligcalc', ['ionic', 'eligcalc.data', 'eligcalc.model'])
 
-.run(function($ionicPlatform) {
+.run(function($ionicPlatform, $window) {
   $ionicPlatform.ready(function() {
-    if(window.cordova && window.cordova.plugins.Keyboard) {
+    if($window.cordova && $window.cordova.plugins.Keyboard) {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       // for form inputs)
       cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
@@ -17,16 +17,16 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data', 'eligcalc.model'])
       // a much nicer keyboard experience.
       cordova.plugins.Keyboard.disableScroll(true);
     }
-    if(window.StatusBar) {
+    if($window.StatusBar) {
       StatusBar.styleDefault();
     }
   });
 })
 
-.run(function($pouch, dataservice, PlayerMock, SUBJECTS, TERMS, GRADES) {
-    console.log(SUBJECTS);
-    console.log(TERMS);
-    console.log(GRADES);
+.run(function($console, SUBJECTS, TERMS, GRADES) {
+    $console.log(SUBJECTS);
+    $console.log(TERMS);
+    $console.log(GRADES);
 });
 
 //// initPlayers and log the count of Player objects

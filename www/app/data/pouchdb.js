@@ -6,9 +6,9 @@
         .module('eligcalc.data')
         .service('$pouch', pouch);
 	
-	pouch.$inject = ['$q', '$rootScope'];
+	pouch.$inject = ['$q', '$rootScope', '$console'];
 
-    function pouch($q, $rootScope) { 
+    function pouch($q, $rootScope, $console) { 
         /*jshint validthis: true*/
         var self = this;
 		var database;
@@ -46,20 +46,20 @@
 				include_docs: true
 			}).on("change", function(change) {
 				if(!change.deleted) {
-                    console.log('document changed...');
-                    console.log(change);
+                    $console.log('document changed...');
+                    $console.log(change);
 					$rootScope.$broadcast("$pouchDB:change", change.doc);
 				} else {
-                    console.log('document deleted...');
-                    console.log(change);
+                    $console.log('document deleted...');
+                    $console.log(change);
 					$rootScope.$broadcast("$pouchDB:delete", change);
 				}
 			}).on("complete", function(info) {
-                console.info('$pouch complete event...');
-                console.info(info);
+                $console.info('$pouch complete event...');
+                $console.info(info);
             }).on("error", function(error) {
-                console.warn('$pouch error event...');
-                console.error(error);
+                $console.warn('$pouch error event...');
+                $console.error(error);
             });
 		}
 
@@ -69,10 +69,10 @@
 
 		function _sync(options) {
             if (options.start) {
-                console.log('start sync with server: ' + options.remoteDatabase);
+                $console.log('start sync with server: ' + options.remoteDatabase);
                 sync = _getDatabase().sync('http://localhost:5984/eligcalc', {live: true, retry: true});                
             } else {
-                console.log('cancel sync with server: ' + options.remoteDatabase);
+                $console.log('cancel sync with server: ' + options.remoteDatabase);
                 sync.cancel();
             }
 		}

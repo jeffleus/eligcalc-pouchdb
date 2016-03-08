@@ -10,7 +10,7 @@
 	
     function Course() { 
 		// Define the constructor function.
-		function Course( doc ) {
+		function Ctor( doc ) {
 			var self = this;
             self.type = "Course";
             self.id = doc._id || "";
