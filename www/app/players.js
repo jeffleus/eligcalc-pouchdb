@@ -7,8 +7,10 @@
         .controller('Players', Players);
 
 	Players.$inject = ['$scope', '$pouch', 'modelservice', 'Player', 'PlayerMock'];
+	//Players.$inject = ['$scope', '$pouch', 'Player', 'PlayerMock'];
 	
     function Players($scope, $pouch, modelservice, Player, PlayerMock) {
+//    function Players($scope, $pouch, Player, PlayerMock) {
         var self = this;
         self.modelSvc = modelservice;    
         self.addPlayer = _addPlayer;
@@ -23,7 +25,7 @@
         });
 
         function _addPlayer() {
-            var p = new Player(PlayerMock.players[modelservice.players.length+1]);
+            var p = new Player(PlayerMock.players[modelservice.players.length]);
             
             return modelservice.addPlayer(p).then(function() {
                 $scope.$apply();

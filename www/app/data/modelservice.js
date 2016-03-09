@@ -8,7 +8,7 @@
 
 	modelservice.$inject = ['$rootScope', 'dataservice', 'Player'];
 	
-    function modelservice($rootScope, $console, dataservice, Player) {
+    function modelservice($rootScope, dataservice, Player) {
         /*jshint validthis: true*/
         var self = this;
         var players;
@@ -25,8 +25,9 @@
         $rootScope.$on("$pouchDB:change", function(event, doc) {
             if (doc.type === 'Player') {
                 var p = _.findWhere(self.players, { id: doc._id });
-                if (p) {
+                if (p && p.rev !== doc._rev) {
                     var revisedPlayer = new Player( doc );
+                    console.info(p.rev + ' --> ' + revisedPlayer.rev);
                     var index = self.players.indexOf(p);
                     if (index !== -1) {
                         self.players[index] = revisedPlayer;
@@ -35,13 +36,24 @@
                 }
             }
         });
+        $rootScope.$on("$pouchDB:delete", function(event, doc) {
+            var p = _.findWhere(self.players, { id: doc._id });
+            if (p) {
+                console.info('delete --> ' + p.id);
+                var index = self.players.indexOf(p);
+                if (index !== -1) {
+                    self.players.splice(index, 1);
+                    $rootScope.$broadcast('modelservice::players_updated');
+                }
+            }
+        });
 
         _init();        
         function _init() {
-            _initPlayers()
-            .then(_initTranscripts())
-            .then(_initCourses())
-            .then(dataservice.sync());
+            _initPlayers();
+//            .then(_initTranscripts())
+//            .then(_initCourses())
+//            .then(dataservice.sync());
         }
 
         function _initPlayers() {
@@ -49,7 +61,7 @@
                 self.players = players;
                 $rootScope.$broadcast('modelservice::players_loaded');
             }).catch(function(err) {
-                $console.error(err);
+                console.error(err);
             });        
         }
 
@@ -58,7 +70,7 @@
                 self.transcripts = transcripts;
                 $rootScope.$broadcast('modelservice::transcripts_loaded');
             }).catch(function(err) {
-                $console.error(err);
+                console.error(err);
             });
         }
 
@@ -67,7 +79,7 @@
                 self.courses = courses;
                 $rootScope.$broadcast('modelservice::courses_loaded');
             }).catch(function(err) {
-                $console.error(err);
+                console.error(err);
             });
         }
 
@@ -75,7 +87,7 @@
             return dataservice.addPlayer(p).then(function(resp) {
                 self.players.push(p);
             }).catch(function(err) {
-                $console.error(err);
+                console.error(err);
             });
         }
 
@@ -86,7 +98,7 @@
                 var index = self.players.indexOf(p);
                 if (index>=0) self.players.splice(index, 1);
             }).catch(function(err) {
-                $console.error(err);
+                console.error(err);
             });      
         }
     }

@@ -1,4 +1,6 @@
 // Ionic Starter App
+(function() {
+    'use strict';
 
 // angular.module is a global place for creating, registering and retrieving Angular modules
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
@@ -23,11 +25,43 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data', 'eligcalc.model'])
   });
 })
 
-.run(function($console, SUBJECTS, TERMS, GRADES) {
-    $console.log(SUBJECTS);
-    $console.log(TERMS);
-    $console.log(GRADES);
+.run(function(SUBJECTS, TERMS, GRADES) {
+    console.log(SUBJECTS);
+    console.log(TERMS);
+    console.log(GRADES);
+})
+
+.run(initPouch)
+
+.directive('animateOnChange', function($animate,$timeout) {
+  return function(scope, elem, attr) {
+      scope.$watch(attr.animateOnChange, function(nv,ov) {
+        if (nv!=ov) {
+          console.info('animateOnChange');
+          var c = 'item-complex item-energized';
+          $animate.addClass(elem,c).then(function() {
+            $timeout(function() {$animate.removeClass(elem,c);}, 350);
+          });
+        }
+      });
+   };
 });
+
+initPouch.$inject = ['$pouch'];    
+function initPouch($pouch) {
+    console.log('init the pouchdb service');
+    $pouch.setDatabase('eligcalc');
+    console.log('compact the database');
+    $pouch.compact().then(function(info) {
+        console.log(info);
+    }).then(function(info) {
+        $pouch.sync({start:true});
+        //$pouch.startListening();
+//      $pouch.sync({cancel:true});
+    }).catch(function(err) {
+        console.error(err);
+    });    
+}    
 
 //// initPlayers and log the count of Player objects
 //.run(function(dataservice) {
@@ -160,3 +194,4 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data', 'eligcalc.model'])
 //		console.error(error);
 //	});
 //})
+})();

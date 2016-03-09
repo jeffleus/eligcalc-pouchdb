@@ -7,6 +7,7 @@
 
     <link href="lib/ionic/css/ionic.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link href="css/animate.css" rel="stylesheet">
 
     <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
     <link href="css/ionic.app.css" rel="stylesheet">
@@ -51,7 +52,7 @@
       </ion-header-bar>
       <ion-content>
           <ion-list>
-              <ion-item ng-repeat="p in vm.modelSvc.players">
+              <ion-item ng-repeat="p in vm.modelSvc.players track by p.id" animate-on-change='p.rev'>
                   {{p.LastName}}, {{p.FirstName}}
                   <ion-option-button class="button-assertive"
                        ng-click="vm.deletePlayer(p)">Delete</ion-option-button>

@@ -10,7 +10,7 @@
 
     function Player() { 
 		// Define the constructor function.
-		function Ctor( doc ) {
+		function Player( doc ) {
 			var self = this;
             self.type = "Player";
             self.id = doc._id || "";

@@ -1,18 +1,18 @@
 // pouch.js
-(function() {
-    'use strict';
+    (function() {
+        'use strict';
 
     angular
         .module('eligcalc.data')
         .service('$pouch', pouch);
 	
-	pouch.$inject = ['$q', '$rootScope', '$console'];
+	pouch.$inject = ['$q', '$rootScope'];
 
-    function pouch($q, $rootScope, $console) { 
+    function pouch($q, $rootScope) { 
         /*jshint validthis: true*/
         var self = this;
 		var database;
-        var sync;
+        var syncHandler;
 		var changeListener;
 		
 		var service = {
@@ -24,6 +24,7 @@
 			save: _save,
 			delete: _delete,
 			get: _get,
+            compact: _compact,
 			destroy: _destroy
 		};
 		
@@ -42,24 +43,25 @@
 
 		function _startListening() {
 			changeListener = database.changes({
+                since: 'now',
 				live: true,
 				include_docs: true
 			}).on("change", function(change) {
 				if(!change.deleted) {
-                    $console.log('document changed...');
-                    $console.log(change);
+                    console.log('document changed...');
+                    console.log(change);
 					$rootScope.$broadcast("$pouchDB:change", change.doc);
 				} else {
-                    $console.log('document deleted...');
-                    $console.log(change);
-					$rootScope.$broadcast("$pouchDB:delete", change);
+                    console.log('document deleted...');
+                    console.log(change);
+					$rootScope.$broadcast("$pouchDB:delete", change.doc);
 				}
 			}).on("complete", function(info) {
-                $console.info('$pouch complete event...');
-                $console.info(info);
+                console.info('$pouch complete event...');
+                console.info(info);
             }).on("error", function(error) {
-                $console.warn('$pouch error event...');
-                $console.error(error);
+                console.warn('$pouch error event...');
+                console.error(error);
             });
 		}
 
@@ -68,12 +70,30 @@
 		}
 
 		function _sync(options) {
-            if (options.start) {
-                $console.log('start sync with server: ' + options.remoteDatabase);
-                sync = _getDatabase().sync('http://localhost:5984/eligcalc', {live: true, retry: true});                
+            if (!!options.cancel) {
+                console.log('cancel sync with server: ' + options.remoteDatabase);
+                syncHandler.on('complete', function(info) {
+                    console.log(info);
+                });
+                syncHandler.cancel();
             } else {
-                $console.log('cancel sync with server: ' + options.remoteDatabase);
-                sync.cancel();
+                console.log('start sync with server: ' + options.remoteDatabase);
+                syncHandler = _getDatabase()
+                    .sync('http://localhost:5984/eligcalc', {live: true, retry: true})
+                    .on('change', function(change) {
+                        console.log('sync_change: ' + change.direction + ' (' + change.change.docs.length + ')');
+                        console.info(change);
+                    })
+                    .on('paused', function(info) {
+                        console.log('sync_paused: ' + info);
+                    })
+                    .on('active', function(info) {
+                        console.log('sync_active: ' + info.direction);
+                    })
+                    .on('error', function(err) {
+                        console.log('sync_error: ' + err);
+                        console.error(err);
+                    });
             }
 		}
 
@@ -92,6 +112,15 @@
 		function _get(documentId) {
 			return database.get(documentId);
 		}
+        
+        function _compact() {
+            return _getDatabase().compact().then(function(info) {
+                console.log('pouchdb_compact: ' + info);
+                return info;
+            }).catch(function(error) {
+                console.error('pouchdb_compact_err: ' + error);
+            });
+        }
 
 		function _destroy() {
 			database.destroy();
