@@ -20,14 +20,15 @@
         var subjectTypes;
         
         self.addPlayer = _addPlayer;
+        self.savePlayer = _savePlayer;
         self.deletePlayer = _deletePlayer;
         
         $rootScope.$on("$pouchDB:change", function(event, doc) {
             if (doc.type === 'Player') {
-                var p = _.findWhere(self.players, { id: doc._id });
-                if (p && p.rev !== doc._rev) {
+                var p = _.findWhere(self.players, { _id: doc._id });
+                if (p && p._rev !== doc._rev) {
                     var revisedPlayer = new Player( doc );
-                    console.info(p.rev + ' --> ' + revisedPlayer.rev);
+                    console.info(p._rev + ' --> ' + revisedPlayer._rev);
                     var index = self.players.indexOf(p);
                     if (index !== -1) {
                         self.players[index] = revisedPlayer;
@@ -37,9 +38,9 @@
             }
         });
         $rootScope.$on("$pouchDB:delete", function(event, doc) {
-            var p = _.findWhere(self.players, { id: doc._id });
+            var p = _.findWhere(self.players, { _id: doc._id });
             if (p) {
-                console.info('delete --> ' + p.id);
+                console.info('delete --> ' + p._id);
                 var index = self.players.indexOf(p);
                 if (index !== -1) {
                     self.players.splice(index, 1);
@@ -86,6 +87,14 @@
         function _addPlayer(p) {
             return dataservice.addPlayer(p).then(function(resp) {
                 self.players.push(p);
+            }).catch(function(err) {
+                console.error(err);
+            });
+        }
+
+        function _savePlayer(p) {
+            return dataservice.savePlayer(p).then(function(resp) {
+                console.log('ModelSvc: player saved');
             }).catch(function(err) {
                 console.error(err);
             });

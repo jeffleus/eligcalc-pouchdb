@@ -45,12 +45,22 @@
 			changeListener = database.changes({
                 since: 'now',
 				live: true,
+				conflicts: true,
 				include_docs: true
 			}).on("change", function(change) {
 				if(!change.deleted) {
                     console.log('document changed...');
                     console.log(change);
-					$rootScope.$broadcast("$pouchDB:change", change.doc);
+					
+					if (change._conflicts && change._conflicts.length > 0) {
+						alert('yo, day some sum conflicts up in dis bitch!');
+					}else {
+						service.get(change.id).then(function(doc) {
+							$rootScope.$broadcast("$pouchDB:change", doc);
+						}).catch(function(err) {
+							console.error(err);
+						});
+					}
 				} else {
                     console.log('document deleted...');
                     console.log(change);
@@ -70,16 +80,17 @@
 		}
 
 		function _sync(options) {
-            if (!!options.cancel) {
-                console.log('cancel sync with server: ' + options.remoteDatabase);
+			var remotedb = 'http://admin:Eraser$16@ec2-52-26-70-170.us-west-2.compute.amazonaws.com:5984/eligcalc';
+            if (!!options && !!options.cancel) {
+                console.log('cancel sync with server: ' + remotedb);
                 syncHandler.on('complete', function(info) {
                     console.log(info);
                 });
                 syncHandler.cancel();
             } else {
-                console.log('start sync with server: ' + options.remoteDatabase);
+                console.log('start sync with server: ' + remotedb);
                 syncHandler = _getDatabase()
-                    .sync('http://localhost:5984/eligcalc', {live: true, retry: true})
+                    .sync(remotedb, {live: true, retry: true})
                     .on('change', function(change) {
                         console.log('sync_change: ' + change.direction + ' (' + change.change.docs.length + ')');
                         console.info(change);
@@ -93,15 +104,18 @@
                     .on('error', function(err) {
                         console.log('sync_error: ' + err);
                         console.error(err);
-                    });
+                    }).catch(function(err) {
+						console.error('Sync Error');
+						console.error(err);
+					});
             }
 		}
 
 		function _save(jsonDocument) {
 			if(!jsonDocument._id) {
 				return database.post(jsonDocument);
-			} else {                
-				return database.put(jsonDocument);
+			} else {
+				return database.put(jsonDocument, jsonDocument._id, jsonDocument._rev);
 			}
 		}
 

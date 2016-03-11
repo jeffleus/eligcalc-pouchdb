@@ -45,6 +45,9 @@
 
     <ion-pane ng-controller="Players as vm">
       <ion-header-bar class="bar-stable">
+          <div class="buttons">
+            <button class="button" ng-click="vm.toggleSync()">{{vm.syncStatus?'online':'offline'}}</button>
+          </div>          
         <h1 class="title">Ionic Blank Starter</h1>
           <div class="buttons">
             <button class="button" ng-click="vm.addPlayer()">add</button>
@@ -52,7 +55,8 @@
       </ion-header-bar>
       <ion-content>
           <ion-list>
-              <ion-item ng-repeat="p in vm.modelSvc.players track by p.id" animate-on-change='p.rev'>
+              <ion-item ng-repeat="p in vm.modelSvc.players track by p._id" animate-on-change='p._rev'
+						ng-click="openModal(p)">
                   {{p.LastName}}, {{p.FirstName}}
                   <ion-option-button class="button-assertive"
                        ng-click="vm.deletePlayer(p)">Delete</ion-option-button>

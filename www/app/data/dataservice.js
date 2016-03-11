@@ -13,6 +13,7 @@
             sync: _sync,
 			getPlayers: _getPlayers,
             addPlayer: _addPlayer,
+            savePlayer: _savePlayer,
             deletePlayer: _deletePlayer, 
 			getTranscripts: _getTranscripts,
 			getCourses: _getCourses,
@@ -51,10 +52,10 @@
 		}
         
         function _addPlayer(p) {
-            var json = angular.toJson(p);
+			var json = angular.toJson(p);			
             return $pouch.save(p).then(function(resp) {
-                p.id = resp.id;
-                p.rev = resp.rev;
+//                p.id = resp.id;
+//                p.rev = resp.rev;
                 console.log(resp);
                 return p;
             }).catch(function(err) {
@@ -62,8 +63,18 @@
             });
         }
         
-        function _deletePlayer(p) {
-            return $pouch.delete(p.id, p.rev).then(function(resp) {
+        function _savePlayer(p) {
+			var json = angular.toJson(p);			
+            return $pouch.save(p).then(function(resp) {
+                console.log(resp);
+                return p;
+            }).catch(function(err) {
+                console.error(err);
+            });
+        }
+
+		function _deletePlayer(p) {
+            return $pouch.delete(p._id, p._rev).then(function(resp) {
                 console.log(resp);
             }).catch(function(err) {
                 console.error(err);

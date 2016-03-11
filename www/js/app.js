@@ -52,15 +52,18 @@ function initPouch($pouch) {
     console.log('init the pouchdb service');
     $pouch.setDatabase('eligcalc');
     console.log('compact the database');
-    $pouch.compact().then(function(info) {
-        console.log(info);
-    }).then(function(info) {
-        $pouch.sync({start:true});
-        //$pouch.startListening();
-//      $pouch.sync({cancel:true});
-    }).catch(function(err) {
-        console.error(err);
-    });    
+
+	$pouch.sync({start:true});
+
+//	$pouch.compact().then(function(info) {
+//        console.log(info);
+//    }).then(function(info) {
+//        $pouch.sync({start:true});
+//        //$pouch.startListening();
+////      $pouch.sync({cancel:true});
+//    }).catch(function(err) {
+//        console.error(err);
+//    });    
 }    
 
 //// initPlayers and log the count of Player objects
