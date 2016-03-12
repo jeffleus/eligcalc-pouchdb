@@ -39,7 +39,25 @@
           </div>
         </div>
   </ion-slide>
+  <ion-slide>
+      <div class="card">
+          <div class="item item-positive">
+            Parent
+          </div>
+          <div class="item item-text-wrap">
+            <ion-list>
+                <ion-item>{{vm.parent.FirstName}}</ion-item>
+                <ion-item>{{vm.parent.LastName}}</ion-item>
+                <ion-item>{{vm.parent.GradYr}}</ion-item>
+              </ion-list>
+          </div>
+          <div class="item item-divider">
+            {{vm.parent._rev}}
+          </div>
+        </div>
+  </ion-slide>
 </ion-slide-box>
+			  <a class="button button-assertive" ng-click="closeModal()">Cancel</a>
 
 <!--
         <ion-list>

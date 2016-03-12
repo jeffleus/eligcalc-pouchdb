@@ -6,10 +6,10 @@
         .module('eligcalc.model')
         .controller('Players', Players);
 
-	Players.$inject = ['$scope', '$ionicModal', '$pouch', 'modelservice', 'Player', 'PlayerMock'];
+	Players.$inject = ['$scope', '$q', '$http', '$ionicModal', '$pouch', 'modelservice', 'Player', 'PlayerMock'];
 	//Players.$inject = ['$scope', '$pouch', 'Player', 'PlayerMock'];
 	
-    function Players($scope, $ionicModal, $pouch, modelservice, Player, PlayerMock) {
+    function Players($scope, $q, $http, $ionicModal, $pouch, modelservice, Player, PlayerMock) {
 //    function Players($scope, $pouch, Player, PlayerMock) {
         var self = this;
 		self.syncStatus = true;
@@ -69,7 +69,7 @@
 
 		$scope.openModal = function(p) {
 			self.selectedPlayer = p;
-            $pouch.db().get(p._id, {conflicts:true}).then(function(doc) {
+            $pouch.db().get(p._id, {revs:true, conflicts:true}).then(function(doc) {
                 loadConflicts(doc);
                 
 //                console.log('doc_id:  ' + doc._id);
@@ -90,29 +90,30 @@
             self.winner = winner;
             
             var parent;
-            var parent_rev = (doc._revisions.start - 1).toString() + doc._revisions[1];
-            $pouch.db().get(doc._id, parent_rev).then(function(parentDoc) {
-                parent = parentDoc;
-            });
+            var parent_rev = (doc._revisions.start - 1).toString() + '-' + doc._revisions.ids[1];			
+			var url = 'http://52.26.70.170:5984/eligcalc/'
+				+ doc._id + '?rev=' + parent_rev;
+			$http.get(url).then(function(response) {
+				console.log(response);
+				parent = response.data;
+				self.parent = parent;
+			});
             
-            var conflicts = [];
-            conflicts = doc._conflicts.map(function(conflict) {
-                
-            });
-            doc._conflicts.forEach(function(conflict_rev) {
-                $pouch.db().get(doc._id, conflict_rev).then(function(conflict) {
-                    conflicts.push(conflict);
-                });
-            });
-            $pouch.db().get(doc._id, {conflicts:true, rev:doc._conflicts[0]}).then(function(doc) {
-                loser = doc;
-                self.loser = loser;
-//                winner.LastName = doc.LastName;
-//                $pouch.db().put(winner).then(function() {
-//                    $pouch.db().remove(doc);
-//                });
-                $scope.$apply();
-            });                        
+			if (doc._conflicts) {
+				var conflicts = doc._conflicts.map(function(conflict_rev) {
+					return $pouch.db().get(doc._id, {rev:conflict_rev})
+						.then(function(conflictDoc) {
+							console.log('Conflict Doc Retrieved...')
+							console.info(conflictDoc._rev);
+							return conflictDoc;
+					});
+				});
+				$q.all(conflicts).then(function(x) {
+					self.conflicts = x;
+					console.log('all conflicts found');
+					self.loser = self.conflicts[0];
+				});
+			}			
         }
 
 //            $pouch.db().get(p._id, {revs:true}).then(function(doc) {

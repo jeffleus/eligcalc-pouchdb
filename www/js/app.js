@@ -54,8 +54,8 @@ function initPouch($pouch) {
 //    console.log('compact the database');
 
 	$pouch.sync({start:true});
-    //$pouch.destroy();
-    
+//    $pouch.destroy();	
+	    
 //	$pouch.compact().then(function(info) {
 //        console.log(info);
 //    }).then(function(info) {
