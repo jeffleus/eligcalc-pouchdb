@@ -44,15 +44,16 @@
   <body ng-app="eligcalc">
 
     <ion-pane ng-controller="Players as vm">
-      <ion-header-bar class="bar-stable">
+        <ion-header-bar align-title="center" class="bar-stable">
           <div class="buttons">
-            <button class="button" ng-click="vm.toggleSync()">{{vm.syncStatus?'online':'offline'}}</button>
-          </div>          
-        <h1 class="title">Ionic Blank Starter</h1>
+            <button class="button" ng-class="{'button-balanced':vm.syncStatus, 'button-assertive':!vm.syncStatus}" 
+                    ng-click="vm.toggleSync()">{{vm.syncStatus?'online':'offline'}}</button>
+          </div>
+          <h1 class="title">Ionic Blank Starter</h1>
           <div class="buttons">
-            <button class="button" ng-click="vm.addPlayer()">add</button>
-          </div>          
-      </ion-header-bar>
+            <button class="button button-positive" ng-click="vm.addPlayer()">add</button>
+          </div>
+        </ion-header-bar>        
       <ion-content>
           <ion-list>
               <ion-item ng-repeat="p in vm.modelSvc.players track by p._id" animate-on-change='p._rev'

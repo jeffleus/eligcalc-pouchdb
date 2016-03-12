@@ -4,23 +4,62 @@
 	</ion-header-bar>
 	<ion-content>
 
-		<ion-list>
-		
+<ion-slide-box on-slide-changed="slideHasChanged($index)">
+  <ion-slide>
+      <div class="card">
+          <div class="item item-balanced">
+            Winner
+          </div>
+          <div class="item item-text-wrap" style="color:green;">
+            <ion-list>
+                <ion-item>{{vm.winner.FirstName}}</ion-item>
+                <ion-item>{{vm.winner.LastName}}</ion-item>
+                <ion-item>{{vm.winner.GradYr}}</ion-item>
+              </ion-list>
+          </div>
+          <div class="item item-divider">
+            {{vm.winner._rev}}}}
+          </div>
+        </div>
+  </ion-slide>
+  <ion-slide>
+      <div class="card">
+          <div class="item item-assertive">
+            Loser
+          </div>
+          <div class="item item-text-wrap">
+            <ion-list>
+                <ion-item>{{vm.loser.FirstName}}</ion-item>
+                <ion-item>{{vm.loser.LastName}}</ion-item>
+                <ion-item>{{vm.loser.GradYr}}</ion-item>
+              </ion-list>
+          </div>
+          <div class="item item-divider">
+            {{vm.loser._rev}}
+          </div>
+        </div>
+  </ion-slide>
+</ion-slide-box>
+
+<!--
+        <ion-list>
+            
 			<ion-item class="item-input"><span class="input-label">First</span>
 				<input type="text" ng-model="vm.selectedPlayer.FirstName"></ion-item>
 			<ion-item class="item-input"><span class="input-label">Last</span>
 				<input type="text" ng-model="vm.selectedPlayer.LastName"></ion-item>
 			<ion-item class="item-input"><span class="input-label">GradYr</span>
 				<input type="text" ng-model="vm.selectedPlayer.GradYr"></ion-item>
+			<ion-item>{{vm.selectedPlayer._id}}</ion-item>
+			<ion-item>{{vm.selectedPlayer._rev}}</ion-item>
 			
-			<ion-item>
 			<div class="button-bar">
 			  <a class="button button-assertive" ng-click="closeModal()">Cancel</a>
 			  <a class="button button-balanced" ng-click="savePlayer()">Save</a>
 			</div>		
-			</ion-item>
 			
 		</ion-list>
+-->
 	
 	</ion-content>
 </ion-modal-view>

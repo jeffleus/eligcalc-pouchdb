@@ -69,8 +69,77 @@
 
 		$scope.openModal = function(p) {
 			self.selectedPlayer = p;
-			$scope.modal.show();
+            $pouch.db().get(p._id, {conflicts:true}).then(function(doc) {
+                loadConflicts(doc);
+                
+//                console.log('doc_id:  ' + doc._id);
+//                console.log('doc_rev: ' + doc._rev);
+//                console.info(doc);
+//                $pouch.db().get(doc._id, {conflicts:true, rev:doc._conflicts[0]}).then(function(doc) {
+//                    console.log('doc_id:  ' + doc._id);
+//                    console.log('doc_rev: ' + doc._rev);
+//                    console.info(doc);
+//                });
+            });
+            $scope.modal.show();                
+//            });            
 		};
+        
+        function loadConflicts(doc) {
+            var winner = doc;
+            self.winner = winner;
+            
+            var parent;
+            var parent_rev = (doc._revisions.start - 1).toString() + doc._revisions[1];
+            $pouch.db().get(doc._id, parent_rev).then(function(parentDoc) {
+                parent = parentDoc;
+            });
+            
+            var conflicts = [];
+            conflicts = doc._conflicts.map(function(conflict) {
+                
+            });
+            doc._conflicts.forEach(function(conflict_rev) {
+                $pouch.db().get(doc._id, conflict_rev).then(function(conflict) {
+                    conflicts.push(conflict);
+                });
+            });
+            $pouch.db().get(doc._id, {conflicts:true, rev:doc._conflicts[0]}).then(function(doc) {
+                loser = doc;
+                self.loser = loser;
+//                winner.LastName = doc.LastName;
+//                $pouch.db().put(winner).then(function() {
+//                    $pouch.db().remove(doc);
+//                });
+                $scope.$apply();
+            });                        
+        }
+
+//            $pouch.db().get(p._id, {revs:true}).then(function(doc) {
+//                //$pouch.db().remove(doc);
+//                console.info(doc._revisions.ids);
+//            });
+//            $pouch.db().get(p._id, {conflicts:true}).then(function(doc) {
+//                //$pouch.db().remove(doc);
+//                console.info(doc._conflicts);
+//                $pouch.db().get(p._id, {rev:doc._conflicts[0]}).then(function(doc) {
+//                    //$pouch.db().remove(doc);
+//                    console.info(doc._conflicts);
+//                });
+//            });
+            
+//            $pouch.db().get(p._id, {conflicts:true}).then(function(response) {
+//                console.info(response);
+//                
+//                if (response._conflicts && response._conflicts.length > 0) {
+//                    response._conflicts.forEach(function(conflict) {
+//                        $pouch.db().get(p._id, {rev:'7-6eba51992b88cd9df2db814d419c267a'}).then(function(doc) {
+//                            //$pouch.db().remove(doc);
+//                            console.info(doc);
+//                        });
+//                    });
+//                }
+//                
 		
 		$scope.savePlayer = function() {
 			var p = self.selectedPlayer;

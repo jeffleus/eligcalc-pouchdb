@@ -25,7 +25,9 @@
 			delete: _delete,
 			get: _get,
             compact: _compact,
-			destroy: _destroy
+			destroy: _destroy,
+            syncHandler: syncHandler,
+            changeListener: changeListener
 		};
 		
 		return service;
@@ -37,7 +39,7 @@
 			return database;
 		}
 		
-		function _setDatabase(databaseName) {			
+		function _setDatabase(databaseName) {
 			database = new PouchDB(databaseName);
 		}
 
@@ -104,10 +106,7 @@
                     .on('error', function(err) {
                         console.log('sync_error: ' + err);
                         console.error(err);
-                    }).catch(function(err) {
-						console.error('Sync Error');
-						console.error(err);
-					});
+                    });
             }
 		}
 
