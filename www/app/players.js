@@ -91,8 +91,8 @@
             
             var parent;
             var parent_rev = (doc._revisions.start - 1).toString() + '-' + doc._revisions.ids[1];			
-			var url = 'http://52.26.70.170:5984/eligcalc/'
-				+ doc._id + '?rev=' + parent_rev;
+			var url = 'http://52.26.70.170:5984/eligcalc/' +
+				doc._id + '?rev=' + parent_rev;
 			$http.get(url).then(function(response) {
 				console.log(response);
 				parent = response.data;
@@ -103,7 +103,7 @@
 				var conflicts = doc._conflicts.map(function(conflict_rev) {
 					return $pouch.db().get(doc._id, {rev:conflict_rev})
 						.then(function(conflictDoc) {
-							console.log('Conflict Doc Retrieved...')
+							console.log('Conflict Doc Retrieved...');
 							console.info(conflictDoc._rev);
 							return conflictDoc;
 					});
