@@ -25,6 +25,7 @@
         self.addPlayer = _addPlayer;
         self.savePlayer = _savePlayer;
         self.deletePlayer = _deletePlayer;
+        self.processPlayerConflicts = _processPlayerConflicts;
         
         $rootScope.$on("$pouchDB:change", function(event, doc) {
 //            if (doc.type === 'Player') {
@@ -131,7 +132,7 @@
 
         function _addPlayer(p) {
             return dataservice.service.addPlayer(p).then(function(resp) {
-                self.players.push(p);
+                //self.players.push(p);
             }).catch(function(err) {
                 console.error(err);
             });
@@ -142,6 +143,16 @@
                 console.log('ModelSvc: player saved');
             }).catch(function(err) {
                 console.error(err);
+            });
+        }
+        
+        function _processPlayerConflicts(p) {
+            return dataservice.processDocForConflicts(p).then(function(result) {
+                p.winner = result.winner;
+                p.loser = result.loser;
+                p.parent = result.parent;
+                
+                return p;
             });
         }
 

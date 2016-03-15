@@ -60,6 +60,8 @@
               <ion-item ng-repeat="p in vm.modelSvc.players track by p._id" animate-on-change='p._rev'
 						ng-click="openModal(p)" ng-class="{'assertive': p.hasConflicts}">
                   {{p.LastName}}, {{p.FirstName}}
+                  <ion-option-button class="button-energized"
+                       ng-click="vm.openConflictModal(p)">Fix</ion-option-button>
                   <ion-option-button class="button-assertive"
                        ng-click="vm.deletePlayer(p)">Delete</ion-option-button>
               </ion-item>

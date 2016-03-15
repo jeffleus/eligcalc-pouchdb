@@ -28,6 +28,7 @@
             $scope.$apply();
         });
 		_loadModal();
+        _loadConflictModal();
 
         function _addPlayer() {
             var p = new Player(PlayerMock.players[modelservice.players.length]);
@@ -60,55 +61,36 @@
 				$scope.modal = modal;
 			});
 		}
+		
+		function _loadConflictModal() {
+			$ionicModal.fromTemplateUrl('app/player/playerConflict.html', {
+				scope: $scope,
+				animation: 'slide-in-up'
+			}).then(function(modal) {
+				$scope.conflict = modal;
+			});
+		}
+
+		$scope.openConflictModal = function(p) {
+            if (p.hasConflicts) {
+                modelservice.processPlayerConflicts(p).then(function(player) {
+                    self.selectedPlayer = p;
+                    $scope.conflict.show();
+                });
+            }
+        };
 
 		$scope.openModal = function(p) {
-			self.selectedPlayer = p;
-            $pouch.db().get(p._id, {revs:true, conflicts:true}).then(function(doc) {
-                loadConflicts(doc);
-                
-//                console.log('doc_id:  ' + doc._id);
-//                console.log('doc_rev: ' + doc._rev);
-//                console.info(doc);
-//                $pouch.db().get(doc._id, {conflicts:true, rev:doc._conflicts[0]}).then(function(doc) {
-//                    console.log('doc_id:  ' + doc._id);
-//                    console.log('doc_rev: ' + doc._rev);
-//                    console.info(doc);
-//                });
-            });
-            $scope.modal.show();                
-//            });            
+            if (p.hasConflicts) {
+                modelservice.processPlayerConflicts(p).then(function(player) {
+                    self.selectedPlayer = p;
+                    $scope.modal.show();
+                });
+            } else { 
+                self.selectedPlayer = p; 
+                $scope.modal.show();                
+            }
 		};
-        
-        function loadConflicts(doc) {
-            var winner = doc;
-            self.winner = winner;
-            
-            var parent;
-            var parent_rev = (doc._revisions.start - 1).toString() + '-' + doc._revisions.ids[1];			
-			var url = 'http://52.26.70.170:5984/eligcalc/' +
-				doc._id + '?rev=' + parent_rev;
-			$http.get(url).then(function(response) {
-				console.log(response);
-				parent = response.data;
-				self.parent = parent;
-			});
-            
-			if (doc._conflicts) {
-				var conflicts = doc._conflicts.map(function(conflict_rev) {
-					return $pouch.db().get(doc._id, {rev:conflict_rev})
-						.then(function(conflictDoc) {
-							console.log('Conflict Doc Retrieved...');
-							console.info(conflictDoc._rev);
-							return conflictDoc;
-					});
-				});
-				$q.all(conflicts).then(function(x) {
-					self.conflicts = x;
-					console.log('all conflicts found');
-					self.loser = self.conflicts[0];
-				});
-			}			
-        }
 
 //            $pouch.db().get(p._id, {revs:true}).then(function(doc) {
 //                //$pouch.db().remove(doc);

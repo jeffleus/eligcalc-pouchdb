@@ -6,9 +6,9 @@
         .module('eligcalc.data')
         .service('dataservice', dataservice);
 
-	dataservice.$inject = ['$q', '$pouch', 'MessageSvc', 'Player', 'Transcript', 'Course'];
+	dataservice.$inject = ['$q', '$http', '$pouch', 'MessageSvc', 'Player', 'Transcript', 'Course'];
 	
-    function dataservice($q, $pouch, MessageSvc, Player, Transcript, Course) {
+    function dataservice($q, $http, $pouch, MessageSvc, Player, Transcript, Course) {
         /*jshint validthis: true*/
         var self = this;
         //local state to track the localdb, remotedb, and sync/change handlers 
@@ -23,6 +23,8 @@
         
         self.startListening = _startListening;
         self.stopListening = _stopListening;
+        
+        self.processDocForConflicts = _processDocForConflicts;
         
         self.service = {
             sync: _startSync,
@@ -96,11 +98,18 @@
 			_changeListener = _database.changes(options)
                 .on("change", function(change) {
 				if(!change.deleted) {
-                    _database.get(change.id).then(function(doc) {
-                        MessageSvc.playerChanged(doc);
-                    }).catch(function(err) {
-                        console.error(err);
-                    });
+//                    if (change._conflicts) {
+//                        processDocForConflicts(change.doc)
+//                            .then(function(result) {
+//                                MessageSvc.playerConflict(result);
+//                            });
+//                    } else {
+                        _database.get(change.id).then(function(doc) {
+                            MessageSvc.playerChanged(doc);
+                        }).catch(function(err) {
+                            console.error(err);
+                        });
+//                    }
 				} else {
                     //no doc to get after deletion...
                     MessageSvc.playerDeleted(change.doc);
@@ -167,13 +176,13 @@
 			return _database.get(documentId);
 		}
         
-		function _save(jsonDocument) {
+		function _save(doc) {
             //no _id means new object to be posted, need to revise to always post w/ my own id's
-			if(!jsonDocument._id) {
-				return _database.post(jsonDocument);
+			if(!doc._id) {
+				return _database.post(doc);
 			} else {
                 //_id and _rev required to be able to update
-				return _database.put(jsonDocument, jsonDocument._id, jsonDocument._rev);
+				return _database.put(doc, doc._id, doc._rev);
 			}
 		}
 
@@ -192,7 +201,7 @@
         
         function _addPlayer(p) {
 			var json = angular.toJson(p);			
-            return $pouch.save(p).then(function(resp) {
+            return _save(p).then(function(resp) {
 //                p.id = resp.id;
 //                p.rev = resp.rev;
                 console.log(resp);
@@ -226,6 +235,61 @@
 
 		function ready(nextPromises) {
 			// implementation details go here
-		}		
+		}        
+        
+        function _processDocForConflicts(doc) {
+            var result = {
+                winner: doc,
+                parent: null,
+                conflicts: null,
+                loser: null
+            };
+            
+            return $q.all([_loadParentDoc(doc), _loadConflictDocs(doc)]).then(function(results) {
+                result.parent = results[0];
+                if (results[1]) {
+                    return $q.all(results[1]).then(function(_conflicts){
+                        result.conflicts = _conflicts;
+                        result.loser = _conflicts[0];
+                        return result;
+                    });
+                } else { return result; }
+            });
+        }
+        
+        function _loadParentDoc(doc) {
+            return _database.get(doc._id, {revs:true,conflicts:true}).then(function(doc) {
+                if (doc._revisions.start == 1) {
+                    console.log('no parent because first revision.');
+                    return null;
+                } else {
+                    var parent_rev = (doc._revisions.start - 1).toString() + '-' + doc._revisions.ids[1];			
+                    var url = _remotedb + '/' + doc._id + '?rev=' + parent_rev;
+                    return $http.get(url).then(function(response) {
+                        return response.data;
+                    }).catch(function(err) {
+                        console.error(err);
+                        return null;
+                    });
+                }                
+            })
+        }
+        
+        function _loadConflictDocs(doc) {
+            //check for actual conflicts before trying to process
+			if (doc._conflicts && doc._conflicts.length > 0) {
+				return doc._conflicts.map(function(conflict_rev) {
+                    var url = _remotedb + '/' + doc._id + '?rev=' + conflict_rev;
+                    return $http.get(url)//.then(function(response) {
+
+                    //return _get(doc._id, {rev:conflict_rev})
+						.then(function(conflictDoc) {
+							console.log('Conflict Doc Retrieved...');
+							console.info(conflictDoc.data._rev);
+							return conflictDoc.data;
+					});
+				});
+            } else { return null; }
+        }
 	}
 })();
