@@ -22,7 +22,7 @@
 
         $scope.$on('modelservice::players_loaded', function() {
             $scope.$apply();
-            $pouch.startListening();
+//            $pouch.startListening();
         });
         $scope.$on('modelservice::players_updated', function() {
             $scope.$apply();
@@ -44,18 +44,12 @@
         }
 		
 		function _toggleSync() {
-			var options = {
-				remoteDatabase: 'http://admin:Eraser$16@ec2-52-26-70-170.us-west-2.compute.amazonaws.com:5984/eligcalc'
-			};
 			if (self.syncStatus) {
-				console.log('stopping sync');
-				options.cancel = true;				
+				modelservice.stopSync();
 			} else {				
-				console.log('starting sync');
-				options.start = true;
+				modelservice.startSync();
 			}
-			$pouch.sync(options);
-			self.syncStatus = !!options.start;
+			self.syncStatus = !self.syncStatus;
 		}
 		
 		function _loadModal() {

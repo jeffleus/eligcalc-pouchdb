@@ -50,10 +50,10 @@ angular.module('eligcalc', ['ionic', 'eligcalc.data', 'eligcalc.model'])
 initPouch.$inject = ['$pouch'];    
 function initPouch($pouch) {
     console.log('init the pouchdb service');
-    $pouch.setDatabase('eligcalc');
+    //$pouch.setDatabase('eligcalc');
 //    console.log('compact the database');
 
-	$pouch.sync({start:true});
+	//$pouch.sync({start:true});
 //    $pouch.destroy();	
 	    
 //	$pouch.compact().then(function(info) {

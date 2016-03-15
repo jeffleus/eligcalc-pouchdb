@@ -6,9 +6,9 @@
         .module('eligcalc.data')
         .service('modelservice', modelservice);
 
-	modelservice.$inject = ['$rootScope', 'dataservice', 'Player'];
+	modelservice.$inject = ['$rootScope', 'dataservice', 'MessageSvc', 'Player'];
 	
-    function modelservice($rootScope, dataservice, Player) {
+    function modelservice($rootScope, dataservice, MessageSvc, Player) {
         /*jshint validthis: true*/
         var self = this;
         var players;
@@ -19,11 +19,51 @@
         var unitTypes;
         var subjectTypes;
         
+        self.startSync = _startSync;
+        self.stopSync = _stopSync;
+        
         self.addPlayer = _addPlayer;
         self.savePlayer = _savePlayer;
         self.deletePlayer = _deletePlayer;
         
         $rootScope.$on("$pouchDB:change", function(event, doc) {
+//            if (doc.type === 'Player') {
+//                var p = _.findWhere(self.players, { _id: doc._id });
+//                if (p && p._rev !== doc._rev) {
+//                    var revisedPlayer = new Player( doc );
+//                    console.info(p._rev + ' --> ' + revisedPlayer._rev);
+//                    var index = self.players.indexOf(p);
+//                    if (index !== -1) {
+//                        self.players[index] = revisedPlayer;
+//                        $rootScope.$broadcast('modelservice::players_updated');
+//                    }
+//                }
+//            }
+        });
+        $rootScope.$on("$pouchDB:delete", function(event, doc) {
+//            var p = _.findWhere(self.players, { _id: doc._id });
+//            if (p) {
+//                console.info('delete --> ' + p._id);
+//                var index = self.players.indexOf(p);
+//                if (index !== -1) {
+//                    self.players.splice(index, 1);
+//                    $rootScope.$broadcast('modelservice::players_updated');
+//                }
+//            }
+        });
+
+        _init();        
+        function _init() {
+            MessageSvc.onPlayerChanged(_playerChanged);
+            MessageSvc.onPlayerDeleted(_playerDeleted);
+            _initPlayers()
+                .then( _initTranscripts() )
+                .then( _initCourses() );
+//            .then(dataservice.service.sync());
+        }
+        
+        function _playerChanged(doc) {
+            console.log('ModelSvc:playerChanged');
             if (doc.type === 'Player') {
                 var p = _.findWhere(self.players, { _id: doc._id });
                 if (p && p._rev !== doc._rev) {
@@ -32,12 +72,17 @@
                     var index = self.players.indexOf(p);
                     if (index !== -1) {
                         self.players[index] = revisedPlayer;
-                        $rootScope.$broadcast('modelservice::players_updated');
                     }
+                } else {
+                    var newPlayer = new Player( doc );
+                    self.players.push( newPlayer );
                 }
+                $rootScope.$broadcast('modelservice::players_updated');
             }
-        });
-        $rootScope.$on("$pouchDB:delete", function(event, doc) {
+        }
+        
+        function _playerDeleted(doc) {
+            console.log('ModelSvc:playerDeleted');
             var p = _.findWhere(self.players, { _id: doc._id });
             if (p) {
                 console.info('delete --> ' + p._id);
@@ -47,18 +92,18 @@
                     $rootScope.$broadcast('modelservice::players_updated');
                 }
             }
-        });
-
-        _init();        
-        function _init() {
-            _initPlayers();
-//            .then(_initTranscripts())
-//            .then(_initCourses())
-//            .then(dataservice.sync());
         }
-
+        
+        function _startSync() {
+            dataservice.startSync();
+        }
+        
+        function _stopSync() {
+            dataservice.stopSync();
+        }
+        
         function _initPlayers() {
-            return dataservice.getPlayers().then(function(players) {
+            return dataservice.service.getPlayers().then(function(players) {
                 self.players = players;
                 $rootScope.$broadcast('modelservice::players_loaded');
             }).catch(function(err) {
@@ -67,7 +112,7 @@
         }
 
         function _initTranscripts() {
-            return dataservice.getTranscripts().then(function(transcripts) {
+            return dataservice.service.getTranscripts().then(function(transcripts) {
                 self.transcripts = transcripts;
                 $rootScope.$broadcast('modelservice::transcripts_loaded');
             }).catch(function(err) {
@@ -76,7 +121,7 @@
         }
 
         function _initCourses() {
-            return dataservice.getCourses().then(function(courses) {
+            return dataservice.service.getCourses().then(function(courses) {
                 self.courses = courses;
                 $rootScope.$broadcast('modelservice::courses_loaded');
             }).catch(function(err) {
@@ -85,7 +130,7 @@
         }
 
         function _addPlayer(p) {
-            return dataservice.addPlayer(p).then(function(resp) {
+            return dataservice.service.addPlayer(p).then(function(resp) {
                 self.players.push(p);
             }).catch(function(err) {
                 console.error(err);
@@ -93,7 +138,7 @@
         }
 
         function _savePlayer(p) {
-            return dataservice.savePlayer(p).then(function(resp) {
+            return dataservice.service.savePlayer(p).then(function(resp) {
                 console.log('ModelSvc: player saved');
             }).catch(function(err) {
                 console.error(err);
@@ -102,7 +147,7 @@
 
         function _deletePlayer(p) {
             //delete from the database using dataservice
-            return dataservice.deletePlayer(p).then(function(deletedP) {
+            return dataservice.service.deletePlayer(p).then(function(deletedP) {
                 //and after db delete, clear from the local array in the modelSvc
                 var index = self.players.indexOf(p);
                 if (index>=0) self.players.splice(index, 1);
