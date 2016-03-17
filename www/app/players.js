@@ -19,6 +19,8 @@
         self.addPlayer = _addPlayer;
         self.deletePlayer = _deletePlayer;
 		self.toggleSync = _toggleSync;
+		
+		self.destroyDb = _destroyDb;
 
         $scope.$on('modelservice::players_loaded', function() {
             $scope.$apply();
@@ -91,6 +93,14 @@
                 $scope.modal.show();                
             }
 		};
+		
+		function _destroyDb() {
+			modelservice.destroyDb().then(function(result) {
+				alert('localdb destroyed');
+			}).catch(function(err) {
+				alert('problem...');
+			});
+		}
 
 //            $pouch.db().get(p._id, {revs:true}).then(function(doc) {
 //                //$pouch.db().remove(doc);

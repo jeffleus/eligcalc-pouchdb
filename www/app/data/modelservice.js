@@ -21,6 +21,7 @@
         
         self.startSync = _startSync;
         self.stopSync = _stopSync;
+		self.destroyDb = _destroyDb;
         
         self.addPlayer = _addPlayer;
         self.savePlayer = _savePlayer;
@@ -103,6 +104,20 @@
             dataservice.stopSync();
         }
         
+		function _destroyDb() {
+			return dataservice.destroy().then(function(result) {
+				console.log('localdb destroyed');
+				self.players = [];
+				self.transcripts = [];
+				self.courses = [];
+				return 0;
+			}).catch(function(err) {
+				console.log('problem destroying localdb');
+				console.error(err);
+				return -1;
+			});
+		}
+		
         function _initPlayers() {
             return dataservice.service.getPlayers().then(function(players) {
                 self.players = players;

@@ -20,6 +20,7 @@
                 
         self.startSync = _startSync;
         self.stopSync = _stopSync;
+		self.destroy = _destroy;
         
         self.startListening = _startListening;
         self.stopListening = _stopListening;
@@ -68,7 +69,9 @@
                     console.error(err);
                     //$rootScope.$on('', err);
                 });
-            return $q.when( _syncHandler );
+            return $q.when( _syncHandler ).catch(function(err) {
+				console.error(err);
+			});
         }
         
         function _stopSync() {
@@ -198,6 +201,10 @@
                 console.error('pouchdb_compact_err: ' + error);
             });
         }
+
+		function _destroy() {
+			return _database.destroy();
+		}
         
         function _addPlayer(p) {
 			var json = angular.toJson(p);			
