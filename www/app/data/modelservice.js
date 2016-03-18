@@ -170,8 +170,8 @@
                 
         function _registerHandlers() {
             //handlers are defined in each factory class by entity
-            dataservice.registerEventHandler(Player.ChangeHandler);
-            dataservice.registerEventHandler(new Transcript.ChangeHandler());
+            dataservice.registerEventHandler( Player.ChangeHandler );
+            dataservice.registerEventHandler( Transcript.ChangeHandler );
             //wireup change methods to respond to entity changes (Player)
             MessageSvc.onPlayerChanged(_playerChanged);
             MessageSvc.onPlayerDeleted(_playerDeleted);

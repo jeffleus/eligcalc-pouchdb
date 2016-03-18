@@ -9,10 +9,11 @@
 //	Transcript.$inject = ['$pouch'];
 	
     function Transcript() { 
+        var _type = 'Transcript';
 		// Define the constructor function.
 		function Transcript( doc ) {
 			var self = this;
-            self.type = "Transcript";
+            self.type = _type;
             self.id = doc._id || "";
             self.rev = doc._rev || "";
             self.Title = doc.Title || "";
@@ -20,10 +21,9 @@
             self.isDeleted = doc.isDeleted || false;
 		}
         
-        Transcript.ChangeHandler = function() {
-            var _docType = 'Transcript';
-            this.docType = _docType;
-            this.handleChange = function(change) {
+        Transcript.ChangeHandler = {
+            docType: _type, 
+            handleChange: function(change) {
                 var self = this;
                 console.log('TranscriptChangeHandler: begin');
                 if(!change.deleted) {
@@ -38,7 +38,7 @@
                     //no doc to get after deletion...
                     self.msgSvc.transcriptDeleted(change.doc);
                 }
-            };
+            }
         };
 		// Return constructor - this is what defines the actual
 		// injectable in the DI framework.
