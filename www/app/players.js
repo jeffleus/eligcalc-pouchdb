@@ -6,43 +6,64 @@
         .module('eligcalc.model')
         .controller('Players', Players);
 
-	Players.$inject = ['$scope', '$q', '$http', '$ionicModal', '$pouch', 'modelservice', 'Player', 'PlayerMock'];
-	//Players.$inject = ['$scope', '$pouch', 'Player', 'PlayerMock'];
+	Players.$inject = ['$scope', '$ionicModal', 'modelservice', 'Player', 'PlayerMock'];
 	
-    function Players($scope, $q, $http, $ionicModal, $pouch, modelservice, Player, PlayerMock) {
-//    function Players($scope, $pouch, Player, PlayerMock) {
+    function Players($scope, $ionicModal, modelservice, Player, PlayerMock) {
         var self = this;
+// Local Ctrl State
 		self.syncStatus = true;
 		self.selectedPlayer = {};
-
+// Model methods
 		self.modelSvc = modelservice;    
         self.addPlayer = _addPlayer;
+        self.savePlayer = _savePlayer;
         self.deletePlayer = _deletePlayer;
 		self.toggleSync = _toggleSync;
-		
 		self.destroyDb = _destroyDb;
-
+//  Wire Model Events to Refresh Scope
         $scope.$on('modelservice::players_loaded', function() {
             $scope.$apply();
-//            $pouch.startListening();
         });
         $scope.$on('modelservice::players_updated', function() {
             $scope.$apply();
         });
+// Modal Instances        
+        var playerModal;
+        var conflictModal;
+        self.openModal = _openModal;
+        self.openConflictModal = _openConflictModal;
+        self.closeModal = _closeModal;
+// Init the Controller Modals        
 		_loadModal();
         _loadConflictModal();
-
+//**********************************************************************
+// Private Model Methods: add, save, delete, sync, destroy
+//**********************************************************************
         function _addPlayer() {
+            //grab a new player from the PlayerMock array (basically Parse export json)
             var p = new Player(PlayerMock.players[modelservice.players.length]);
-            
-            return modelservice.addPlayer(p).then(function() {
+            //add the player through the modelservice
+            modelservice.addPlayer(p).then(function() {
                 $scope.$apply();
-            });
+            }).catch(function(err) {
+                console.log('_deletePlayer resulted in error in playersCtrl');
+            });            
         }
+		
+		function _savePlayer() {
+			var p = self.selectedPlayer;
+			modelservice.savePlayer(p).then(function() {
+				$scope.modal.hide();
+			}).catch(function(err) {
+				console.error(err);
+			});
+		}
         
         function _deletePlayer(p) {
-            return modelservice.deletePlayer(p).then(function() {
+            modelservice.deletePlayer(p).then(function() {
                 $scope.$apply();
+            }).catch(function(err) {
+                console.log('_deletePlayer resulted in error in playersCtrl');
             });            
         }
 		
@@ -55,12 +76,23 @@
 			self.syncStatus = !self.syncStatus;
 		}
 		
-		function _loadModal() {
+		function _destroyDb() {
+			modelservice.destroyDb().then(function(result) {
+				console.log('localdb destroyed');
+			}).catch(function(err) {
+				console.error('_destroyDb had a problem in playerCtrl...');
+                console.error(err);
+			});
+		}
+//**********************************************************************
+// Modal Stuff: load, open, close, and events (destroy, hide, remove)
+//**********************************************************************
+        function _loadModal() {
 			$ionicModal.fromTemplateUrl('app/player/player.html', {
 				scope: $scope,
 				animation: 'slide-in-up'
 			}).then(function(modal) {
-				$scope.modal = modal;
+                playerModal = modal;
 			});
 		}
 		
@@ -69,77 +101,36 @@
 				scope: $scope,
 				animation: 'slide-in-up'
 			}).then(function(modal) {
-				$scope.conflict = modal;
+                conflictModal = modal;
 			});
 		}
 
-		$scope.openConflictModal = function(p) {
+		function _openConflictModal(p) {
             if (p.hasConflicts) {
                 modelservice.processPlayerConflicts(p).then(function(player) {
                     self.selectedPlayer = p;
-                    $scope.conflict.show();
+                    conflictModal.show();
                 });
             }
-        };
+        }
 
-		$scope.openModal = function(p) {
-            if (p.hasConflicts) {
+		function _openModal(p) {
+            if (p.hasConflicts && $scope.modal) {
                 modelservice.processPlayerConflicts(p).then(function(player) {
                     self.selectedPlayer = p;
-                    $scope.modal.show();
+                    conflictModal.show();
                 });
             } else { 
                 self.selectedPlayer = p; 
-                $scope.modal.show();                
+                playerModal.show();              
             }
-		};
-		
-		function _destroyDb() {
-			modelservice.destroyDb().then(function(result) {
-				alert('localdb destroyed');
-			}).catch(function(err) {
-				alert('problem...');
-			});
 		}
-
-//            $pouch.db().get(p._id, {revs:true}).then(function(doc) {
-//                //$pouch.db().remove(doc);
-//                console.info(doc._revisions.ids);
-//            });
-//            $pouch.db().get(p._id, {conflicts:true}).then(function(doc) {
-//                //$pouch.db().remove(doc);
-//                console.info(doc._conflicts);
-//                $pouch.db().get(p._id, {rev:doc._conflicts[0]}).then(function(doc) {
-//                    //$pouch.db().remove(doc);
-//                    console.info(doc._conflicts);
-//                });
-//            });
-            
-//            $pouch.db().get(p._id, {conflicts:true}).then(function(response) {
-//                console.info(response);
-//                
-//                if (response._conflicts && response._conflicts.length > 0) {
-//                    response._conflicts.forEach(function(conflict) {
-//                        $pouch.db().get(p._id, {rev:'7-6eba51992b88cd9df2db814d419c267a'}).then(function(doc) {
-//                            //$pouch.db().remove(doc);
-//                            console.info(doc);
-//                        });
-//                    });
-//                }
-//                
 		
-		$scope.savePlayer = function() {
-			var p = self.selectedPlayer;
-			modelservice.savePlayer(p).then(function() {
-				$scope.modal.hide();
-			}).catch(function(err) {
-				console.error(err);
-			});
-		};
-		
-		$scope.closeModal = function() {
-			$scope.modal.hide();
-		};
+		function _closeModal() {
+            if (playerModal.isShown()) playerModal.hide();
+            if (conflictModal.isShown()) conflictModal.hide();
+		}
+        
 		//Cleanup the modal when we're done with it!
 		$scope.$on('$destroy', function() {
 			$scope.modal.remove();
@@ -147,10 +138,12 @@
 		// Execute action on hide modal
 		$scope.$on('modal.hidden', function() {
 			// Execute action
+            console.log('hide modal');
 		});
 		// Execute action on remove modal
 		$scope.$on('modal.removed', function() {
 			// Execute action
+            console.log('remove modal');
 		});
 	}
 })();

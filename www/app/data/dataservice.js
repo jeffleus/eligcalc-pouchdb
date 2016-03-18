@@ -6,9 +6,9 @@
         .module('eligcalc.data')
         .service('dataservice', dataservice);
 
-	dataservice.$inject = ['$q', '$http', '$pouch', 'MessageSvc', 'Player', 'Transcript', 'Course'];
+	dataservice.$inject = ['$q', '$http', 'MessageSvc', 'Player', 'Transcript', 'Course'];
 	
-    function dataservice($q, $http, $pouch, MessageSvc, Player, Transcript, Course) {
+    function dataservice($q, $http, MessageSvc, Player, Transcript, Course) {
         /*jshint validthis: true*/
         var self = this;
         //local state to track the localdb, remotedb, and sync/change handlers 
@@ -16,11 +16,18 @@
         var _localdb = 'eligcalc';
         var _remotedb = 'http://admin:Eraser$16@ec2-52-26-70-170.us-west-2.compute.amazonaws.com:5984/eligcalc';
         var _syncHandler = {};
-        var _changeListener = {};   
+        var _changeListener = {};
+        
+        var _eventHandlers = [];
+        self.registerEventHandler = function(handler) {
+            _eventHandlers.push(handler);
+        };
                 
         self.startSync = _startSync;
         self.stopSync = _stopSync;
 		self.destroy = _destroy;
+        self.msgSvc = MessageSvc;
+        self.database = {};
         
         self.startListening = _startListening;
         self.stopListening = _stopListening;
@@ -48,6 +55,7 @@
         
         function _setDatabase() {
             _database = new PouchDB(_localdb);
+            self.database = _database;
             return $q.when( _database );
         }
         
@@ -100,23 +108,28 @@
             //save a ref to the changeListener for evenutal cancel
 			_changeListener = _database.changes(options)
                 .on("change", function(change) {
-				if(!change.deleted) {
-//                    if (change._conflicts) {
-//                        processDocForConflicts(change.doc)
-//                            .then(function(result) {
-//                                MessageSvc.playerConflict(result);
-//                            });
-//                    } else {
-                        _database.get(change.id).then(function(doc) {
-                            MessageSvc.playerChanged(doc);
-                        }).catch(function(err) {
-                            console.error(err);
-                        });
-//                    }
-				} else {
-                    //no doc to get after deletion...
-                    MessageSvc.playerDeleted(change.doc);
-                }
+                    _eventHandlers.forEach(function(handler) {
+                        if (change.doc.type == handler.docType) {
+                            handler.handleChange.call(self, change);
+                        }
+                    });
+//				if(!change.deleted) {
+////                    if (change._conflicts) {
+////                        processDocForConflicts(change.doc)
+////                            .then(function(result) {
+////                                MessageSvc.playerConflict(result);
+////                            });
+////                    } else {
+//                        _database.get(change.id).then(function(doc) {
+//                            MessageSvc.playerChanged(doc);
+//                        }).catch(function(err) {
+//                            console.error(err);
+//                        });
+////                    }
+//				} else {
+//                    //no doc to get after deletion...
+//                    MessageSvc.playerDeleted(change.doc);
+//                }
 			}).on("complete", function(info) {
                 console.info('$pouch complete event...');
                 console.info(info);
@@ -138,6 +151,15 @@
                 console.log('canceling live listening on the dataservice...');
                 _changeListener.cancel();
             }
+        }
+        
+        function _compact() {
+            return _database.compact().then(function(info) {
+                console.log('pouchdb_compact: ' + info);
+                return info;
+            }).catch(function(error) {
+                console.error('pouchdb_compact_err: ' + error);
+            });
         }
 //************************************************************
 // GetEntities: getPlayers, getTranscripts, _getCourses
@@ -192,15 +214,6 @@
 		function _delete(documentId, documentRevision) {
 			return _database.remove(documentId, documentRevision);
 		}
-        
-        function _compact() {
-            return _database.compact().then(function(info) {
-                console.log('pouchdb_compact: ' + info);
-                return info;
-            }).catch(function(error) {
-                console.error('pouchdb_compact_err: ' + error);
-            });
-        }
 
 		function _destroy() {
 			return _database.destroy();
@@ -209,29 +222,30 @@
         function _addPlayer(p) {
 			var json = angular.toJson(p);			
             return _save(p).then(function(resp) {
-//                p.id = resp.id;
-//                p.rev = resp.rev;
-                console.log(resp);
+                console.log('_addPlayer completed (id: ' + resp.id + ')');
                 return p;
             }).catch(function(err) {
+                console.log('_addPlayer failed in dataservice...');
                 console.error(err);
             });
         }
         
         function _savePlayer(p) {
-			var json = angular.toJson(p);			
-            return $pouch.save(p).then(function(resp) {
-                console.log(resp);
+            return _save(p).then(function(resp) {
+                console.log('_savePlayer completed (rev: ' + resp.rev + ')');
                 return p;
             }).catch(function(err) {
+                console.log('_savePlayer failed in dataservice...');
                 console.error(err);
             });
         }
 
 		function _deletePlayer(p) {
-            return $pouch.delete(p._id, p._rev).then(function(resp) {
-                console.log(resp);
+            return _delete(p._id, p._rev).then(function(resp) {
+                console.log('_deletePlayer completed (rev: ' + resp.rev + ')');
+                return resp.id;
             }).catch(function(err) {
+                console.log('_deletePlayer failed in dataservice...');
                 console.error(err);
             });
         }
@@ -279,7 +293,7 @@
                         return null;
                     });
                 }                
-            })
+            });
         }
         
         function _loadConflictDocs(doc) {

@@ -6,64 +6,42 @@
         .module('eligcalc.data')
         .service('modelservice', modelservice);
 
-	modelservice.$inject = ['$rootScope', 'dataservice', 'MessageSvc', 'Player'];
+	modelservice.$inject = ['$rootScope', 'dataservice', 'MessageSvc', 'Player', 'Transcript'];
 	
-    function modelservice($rootScope, dataservice, MessageSvc, Player) {
+    function modelservice($rootScope, dataservice, MessageSvc, Player, Transcript) {
         /*jshint validthis: true*/
         var self = this;
+// private service instance variables
         var players;
         var transcripts;
         var courses;
-        
+// private lookup types        
         var gradeTypes;
         var unitTypes;
         var subjectTypes;
-        
+// pouch sync and db API       
         self.startSync = _startSync;
         self.stopSync = _stopSync;
 		self.destroyDb = _destroyDb;
-        
+// Player entity methods: add, save, delete, processConflicts        
         self.addPlayer = _addPlayer;
         self.savePlayer = _savePlayer;
         self.deletePlayer = _deletePlayer;
         self.processPlayerConflicts = _processPlayerConflicts;
-        
-        $rootScope.$on("$pouchDB:change", function(event, doc) {
-//            if (doc.type === 'Player') {
-//                var p = _.findWhere(self.players, { _id: doc._id });
-//                if (p && p._rev !== doc._rev) {
-//                    var revisedPlayer = new Player( doc );
-//                    console.info(p._rev + ' --> ' + revisedPlayer._rev);
-//                    var index = self.players.indexOf(p);
-//                    if (index !== -1) {
-//                        self.players[index] = revisedPlayer;
-//                        $rootScope.$broadcast('modelservice::players_updated');
-//                    }
-//                }
-//            }
-        });
-        $rootScope.$on("$pouchDB:delete", function(event, doc) {
-//            var p = _.findWhere(self.players, { _id: doc._id });
-//            if (p) {
-//                console.info('delete --> ' + p._id);
-//                var index = self.players.indexOf(p);
-//                if (index !== -1) {
-//                    self.players.splice(index, 1);
-//                    $rootScope.$broadcast('modelservice::players_updated');
-//                }
-//            }
-        });
-
+// Contorller Initialization
         _init();        
         function _init() {
-            MessageSvc.onPlayerChanged(_playerChanged);
-            MessageSvc.onPlayerDeleted(_playerDeleted);
+            //register handlers by entity type, pulling each from entity class definitions
+            _registerHandlers();
+            //cascade init the entities: players -> transcripts -> courses
             _initPlayers()
                 .then( _initTranscripts() )
                 .then( _initCourses() );
 //            .then(dataservice.service.sync());
         }
-        
+//**********************************************************************
+// Event handlers for Player changes/deletions
+//**********************************************************************
         function _playerChanged(doc) {
             console.log('ModelSvc:playerChanged');
             if (doc.type === 'Player') {
@@ -96,6 +74,10 @@
             }
         }
         
+        function _transcriptChanged(doc) {
+            console.log('transcript changed is handled...');
+        }
+        
         function _startSync() {
             dataservice.startSync();
         }
@@ -117,7 +99,9 @@
 				return -1;
 			});
 		}
-		
+//**********************************************************************
+// Entity Initializers: players, transcripts, and courses
+//**********************************************************************
         function _initPlayers() {
             return dataservice.service.getPlayers().then(function(players) {
                 self.players = players;
@@ -144,7 +128,9 @@
                 console.error(err);
             });
         }
-
+//**********************************************************************
+// Entity Mgmt CRUD: add, save, delete, and processConflicts
+//**********************************************************************
         function _addPlayer(p) {
             return dataservice.service.addPlayer(p).then(function(resp) {
                 //self.players.push(p);
@@ -160,16 +146,6 @@
                 console.error(err);
             });
         }
-        
-        function _processPlayerConflicts(p) {
-            return dataservice.processDocForConflicts(p).then(function(result) {
-                p.winner = result.winner;
-                p.loser = result.loser;
-                p.parent = result.parent;
-                
-                return p;
-            });
-        }
 
         function _deletePlayer(p) {
             //delete from the database using dataservice
@@ -180,6 +156,26 @@
             }).catch(function(err) {
                 console.error(err);
             });      
+        }
+        
+        function _processPlayerConflicts(p) {
+            return dataservice.processDocForConflicts(p).then(function(result) {
+                p.winner = result.winner;
+                p.loser = result.loser;
+                p.parent = result.parent;
+                
+                return p;
+            });
+        }
+                
+        function _registerHandlers() {
+            //handlers are defined in each factory class by entity
+            dataservice.registerEventHandler(Player.ChangeHandler);
+            dataservice.registerEventHandler(new Transcript.ChangeHandler());
+            //wireup change methods to respond to entity changes (Player)
+            MessageSvc.onPlayerChanged(_playerChanged);
+            MessageSvc.onPlayerDeleted(_playerDeleted);
+            MessageSvc.onTranscriptChange(_transcriptChanged);
         }
     }
 })();
