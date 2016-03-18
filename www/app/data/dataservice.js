@@ -17,21 +17,17 @@
         var _remotedb = 'http://admin:Eraser$16@ec2-52-26-70-170.us-west-2.compute.amazonaws.com:5984/eligcalc';
         var _syncHandler = {};
         var _changeListener = {};
+        self.msgSvc = MessageSvc;
+        self.database = {};
         
         var _eventHandlers = [];
         self.registerEventHandler = _registerEventHandler;
                 
         self.startSync = _startSync;
         self.stopSync = _stopSync;
-		self.destroy = function() {
-			$pouch.setDatabase( _database );
-			$pouch.destroy();
-		};
-        self.msgSvc = MessageSvc;
-        self.database = {};
-        
         self.startListening = _startListening;
         self.stopListening = _stopListening;
+		self.destroy = _destroy;        
         
         self.processDocForConflicts = _processDocForConflicts;
  
@@ -59,6 +55,11 @@
             self.database = _database;
             return $q.when( _database );
         }
+		
+		function _destroy() {
+			$pouch.setDatabase( _database );
+			$pouch.destroy();
+		}
 
 		function _startSync() {
             console.log('start sync (datasvc) with server: ' + _remotedb);
