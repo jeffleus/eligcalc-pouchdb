@@ -6,9 +6,9 @@
         .module('eligcalc.data')
         .service('dataservice', dataservice);
 
-	dataservice.$inject = ['$q', '$http', 'MessageSvc', 'Player', 'Transcript', 'Course'];
+	dataservice.$inject = ['$q', '$http', '$pouch', 'MessageSvc', 'Player', 'Transcript', 'Course'];
 	
-    function dataservice($q, $http, MessageSvc, Player, Transcript, Course) {
+    function dataservice($q, $http, $pouch, MessageSvc, Player, Transcript, Course) {
         /*jshint validthis: true*/
         var self = this;
         //local state to track the localdb, remotedb, and sync/change handlers 
@@ -19,13 +19,14 @@
         var _changeListener = {};
         
         var _eventHandlers = [];
-        self.registerEventHandler = function(handler) {
-            _eventHandlers.push(handler);
-        };
+        self.registerEventHandler = _registerEventHandler;
                 
         self.startSync = _startSync;
         self.stopSync = _stopSync;
-		self.destroy = _destroy;
+		self.destroy = function() {
+			$pouch.setDatabase( _database );
+			$pouch.destroy();
+		};
         self.msgSvc = MessageSvc;
         self.database = {};
         
@@ -33,33 +34,33 @@
         self.stopListening = _stopListening;
         
         self.processDocForConflicts = _processDocForConflicts;
-        
-        self.service = {
-            sync: _startSync,
-			getPlayers: _getPlayers,
-            addPlayer: _addPlayer,
-            savePlayer: _savePlayer,
-            deletePlayer: _deletePlayer, 
-			getTranscripts: _getTranscripts,
-			getCourses: _getCourses,
-			getLookups: _getLookups//,
-			//ready: ready
-		};
-        
+ 
+		self.getPlayers = _getPlayers;
+		self.addPlayer = _addPlayer;
+		self.savePlayer = _savePlayer;
+		self.deletePlayer = _deletePlayer;
+		self.getTranscripts = _getTranscripts;
+		self.getCourses = _getCourses;
+		self.getLookups = _getLookups;
+
         _init();
         function _init() {
             _setDatabase()
                 .then( _startSync() )
                 .then( _startListening() );
         }
-        
-        function _setDatabase() {
+
+		function _registerEventHandler(handler) {
+            _eventHandlers.push(handler);
+        };
+
+		function _setDatabase() {
             _database = new PouchDB(_localdb);
             self.database = _database;
             return $q.when( _database );
         }
-        
-        function _startSync() {
+
+		function _startSync() {
             console.log('start sync (datasvc) with server: ' + _remotedb);
             _syncHandler = _database.sync(_remotedb, {live: true, retry: true})
                 .on('change', function(change) {
@@ -77,12 +78,13 @@
                     console.error(err);
                     //$rootScope.$on('', err);
                 });
-            return $q.when( _syncHandler ).catch(function(err) {
+
+			return $q.when( _syncHandler ).catch(function(err) {
 				console.error(err);
 			});
         }
-        
-        function _stopSync() {
+
+		function _stopSync() {
             if (_syncHandler) {                
                 _syncHandler.on('complete', function(info) {
                     console.log('live sync canceled on dataservice.');
@@ -95,62 +97,24 @@
         }
         
         function _startListening() {
-            //since:'now' prevents listening during init stages and live:true keeps listening
-            // during live replication and changes in the UI.
-            //listener options requires the conflicts and include docs to wire up conflict
-            // resolution code.
-            var options = {
-                since: 'now',
-				live: true,
-				conflicts: true,
-				include_docs: true
-			};
-            //save a ref to the changeListener for evenutal cancel
-			_changeListener = _database.changes(options)
-                .on("change", function(change) {
-                    _eventHandlers.forEach(function(handler) {
-                        if (change.doc.type == handler.docType) {
-                            handler.handleChange.call(self, change);
-                        }
-                    });
-//				if(!change.deleted) {
-////                    if (change._conflicts) {
-////                        processDocForConflicts(change.doc)
-////                            .then(function(result) {
-////                                MessageSvc.playerConflict(result);
-////                            });
-////                    } else {
-//                        _database.get(change.id).then(function(doc) {
-//                            MessageSvc.playerChanged(doc);
-//                        }).catch(function(err) {
-//                            console.error(err);
-//                        });
-////                    }
-//				} else {
-//                    //no doc to get after deletion...
-//                    MessageSvc.playerDeleted(change.doc);
-//                }
-			}).on("complete", function(info) {
-                console.info('$pouch complete event...');
-                console.info(info);
-            }).on("error", function(error) {
-                console.warn('$pouch error event...');
-                console.error(error);
-            });
+			_changeListener = $pouch.startListening( _database );
+			_changeListener
+				.on("change", function(change) {
+					_eventHandlers.forEach(function(handler) {
+						if (change.doc.type == handler.docType) {
+							handler.handleChange.call(self, change);
+						}
+					});
+				}).on("error", function(error) {
+					console.warn('$pouch error event...');
+					console.error(error);
+				});
             
             return $q.when( _changeListener );
         }
         
         function _stopListening() {
-            if (_changeListener) {
-                _changeListener.on('complete', function(info) {
-                    console.log('live listening canceled on dataservice.');
-                    console.log(info);
-                });
-
-                console.log('canceling live listening on the dataservice...');
-                _changeListener.cancel();
-            }
+			$pouch.stopListening();
         }
         
         function _compact() {
@@ -196,32 +160,10 @@
 //************************************************************
 // End GetEntities
 //************************************************************
-
-		function _get(documentId) {
-			return _database.get(documentId);
-		}
-        
-		function _save(doc) {
-            //no _id means new object to be posted, need to revise to always post w/ my own id's
-			if(!doc._id) {
-				return _database.post(doc);
-			} else {
-                //_id and _rev required to be able to update
-				return _database.put(doc, doc._id, doc._rev);
-			}
-		}
-
-		function _delete(documentId, documentRevision) {
-			return _database.remove(documentId, documentRevision);
-		}
-
-		function _destroy() {
-			return _database.destroy();
-		}
         
         function _addPlayer(p) {
-			var json = angular.toJson(p);			
-            return _save(p).then(function(resp) {
+			$pouch.setDatabase( _database );
+            return $pouch.save(p).then(function(resp) {
                 console.log('_addPlayer completed (id: ' + resp.id + ')');
                 return p;
             }).catch(function(err) {
@@ -231,7 +173,8 @@
         }
         
         function _savePlayer(p) {
-            return _save(p).then(function(resp) {
+			$pouch.setDatabase( _database );
+            return $pouch.save(p).then(function(resp) {
                 console.log('_savePlayer completed (rev: ' + resp.rev + ')');
                 return p;
             }).catch(function(err) {
@@ -241,7 +184,8 @@
         }
 
 		function _deletePlayer(p) {
-            return _delete(p._id, p._rev).then(function(resp) {
+			$pouch.setDatabase( _database );
+            return $pouch.delete(p._id, p._rev).then(function(resp) {
                 console.log('_deletePlayer completed (rev: ' + resp.rev + ')');
                 return resp.id;
             }).catch(function(err) {
@@ -258,6 +202,13 @@
 			// implementation details go here
 		}        
         
+//************************************************************
+// CONFLICTS: processDoc, loadParentDoc, loadConflictDocs
+//************************************************************
+//
+// used to take a doc w/ _conflicts arry and process out the current
+// winner, the parent doc, and docs for each conflict listed in
+// the array of conflicts on the doc
         function _processDocForConflicts(doc) {
             var result = {
                 winner: doc,
@@ -279,15 +230,21 @@
         }
         
         function _loadParentDoc(doc) {
-            return _database.get(doc._id, {revs:true,conflicts:true}).then(function(doc) {
+			$pouch.setDatabase( _database );
+            return $pouch.getWithRevisionsAndConflicts(doc._id).then(function(doc) {
                 if (doc._revisions.start == 1) {
                     console.log('no parent because first revision.');
                     return null;
                 } else {
                     var parent_rev = (doc._revisions.start - 1).toString() + '-' + doc._revisions.ids[1];			
                     var url = _remotedb + '/' + doc._id + '?rev=' + parent_rev;
-                    return $http.get(url).then(function(response) {
-                        return response.data;
+					
+					var remoteDatabase = new PouchDB( _remotedb );
+					$pouch.setDatabase( remoteDatabase );					
+					
+                    return $pouch.getSpecificRevision(doc._id, parent_rev).then(function(doc) {
+                    //return $http.get(url).then(function(response) {
+                        return doc;
                     }).catch(function(err) {
                         console.error(err);
                         return null;

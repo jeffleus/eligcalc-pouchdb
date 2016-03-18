@@ -103,7 +103,7 @@
 // Entity Initializers: players, transcripts, and courses
 //**********************************************************************
         function _initPlayers() {
-            return dataservice.service.getPlayers().then(function(players) {
+            return dataservice.getPlayers().then(function(players) {
                 self.players = players;
                 $rootScope.$broadcast('modelservice::players_loaded');
             }).catch(function(err) {
@@ -112,7 +112,7 @@
         }
 
         function _initTranscripts() {
-            return dataservice.service.getTranscripts().then(function(transcripts) {
+            return dataservice.getTranscripts().then(function(transcripts) {
                 self.transcripts = transcripts;
                 $rootScope.$broadcast('modelservice::transcripts_loaded');
             }).catch(function(err) {
@@ -121,7 +121,7 @@
         }
 
         function _initCourses() {
-            return dataservice.service.getCourses().then(function(courses) {
+            return dataservice.getCourses().then(function(courses) {
                 self.courses = courses;
                 $rootScope.$broadcast('modelservice::courses_loaded');
             }).catch(function(err) {
@@ -132,7 +132,7 @@
 // Entity Mgmt CRUD: add, save, delete, and processConflicts
 //**********************************************************************
         function _addPlayer(p) {
-            return dataservice.service.addPlayer(p).then(function(resp) {
+            return dataservice.addPlayer(p).then(function(resp) {
                 //self.players.push(p);
             }).catch(function(err) {
                 console.error(err);
@@ -140,7 +140,7 @@
         }
 
         function _savePlayer(p) {
-            return dataservice.service.savePlayer(p).then(function(resp) {
+            return dataservice.savePlayer(p).then(function(resp) {
                 console.log('ModelSvc: player saved');
             }).catch(function(err) {
                 console.error(err);
@@ -149,7 +149,7 @@
 
         function _deletePlayer(p) {
             //delete from the database using dataservice
-            return dataservice.service.deletePlayer(p).then(function(deletedP) {
+            return dataservice.deletePlayer(p).then(function(deletedP) {
                 //and after db delete, clear from the local array in the modelSvc
                 var index = self.players.indexOf(p);
                 if (index>=0) self.players.splice(index, 1);

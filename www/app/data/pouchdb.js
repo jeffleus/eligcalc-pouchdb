@@ -25,6 +25,8 @@ var service = {
     save: _save,
     delete: _delete,
     get: _get,
+	getSpecificRevision: _getSpecificRevision, 
+	getWithRevisionsAndConflicts: _getWithRevisionsAndConflicts,
     compact: _compact,
     destroy: _destroy,
     syncHandler: syncHandler,
@@ -40,46 +42,73 @@ var service = {
 			return database;
 		}
 		
-		function _setDatabase(databaseName) {
-			database = new PouchDB(databaseName);
+		function _setDatabase( db ) {
+			if (typeof db === 'string') {
+				database = new PouchDB(databaseName);
+			} else {
+				database = db;
+			}
 		}
 
-		function _startListening() {
-			changeListener = database.changes({
+		function _startListening(_database) {
+            //since:'now' prevents listening during init stages and live:true keeps listening
+            // during live replication and changes in the UI.
+            //listener options requires the conflicts and include docs to wire up conflict
+            // resolution code.
+            var options = {
                 since: 'now',
 				live: true,
 				conflicts: true,
 				include_docs: true
-			}).on("change", function(change) {
-				if(!change.deleted) {
-                    console.log('document changed...');
-                    console.log(change);
-					
-					if (change._conflicts && change._conflicts.length > 0) {
-						console.log('yo, day some sum conflicts up in dis bitch!');
-					}else {
-						service.get(change.id).then(function(doc) {
-							$rootScope.$broadcast("$pouchDB:change", doc);
-						}).catch(function(err) {
-							console.error(err);
-						});
-					}
-				} else {
-                    console.log('document deleted...');
-                    console.log(change);
-					$rootScope.$broadcast("$pouchDB:delete", change.doc);
-				}
-			}).on("complete", function(info) {
-                console.info('$pouch complete event...');
-                console.info(info);
-            }).on("error", function(error) {
-                console.warn('$pouch error event...');
-                console.error(error);
-            });
+			};
+            //save a ref to the changeListener for evenutal cancel
+			changeListener = _database.changes(options);            
+
+			return changeListener;
 		}
 
 		function _stopListening() {
-			changeListener.cancel();
+			//check for a changeListener in the service
+            if (changeListener) {
+				//if found, wire a complete handler to log the execution of the cancel
+                changeListener.on('complete', function(info) {
+                    console.log('live listening canceled on dataservice.');
+                    console.log(info);
+                });
+				//log and start the cancelation on the changeListener
+                console.log('canceling live listening on the dataservice...');
+                changeListener.cancel();
+            }
+		}
+
+		function _get(documentId) {
+			return database.get(documentId, {});
+		}
+		
+		function _getSpecificRevision(documentId, revId) {
+			return database.get(documentId, { rev: revId });
+		}
+		
+		function _getWithRevisionsAndConflicts(documentId) {
+			return database.get(documentId, { revs:true,conflicts:true });
+		}
+        
+		function _save(doc) {
+            //no _id means new object to be posted, need to revise to always post w/ my own id's
+			if(!doc._id) {
+				return database.post(doc);
+			} else {
+                //_id and _rev required to be able to update
+				return database.put(doc, doc._id, doc._rev);
+			}
+		}
+
+		function _delete(documentId, documentRevision) {
+			return database.remove(documentId, documentRevision);
+		}
+
+		function _destroy() {
+			return database.destroy();
 		}
 //****************************************
 // Load Conflicts and Parent
