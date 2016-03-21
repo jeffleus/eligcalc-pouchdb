@@ -53,7 +53,7 @@
 		function _savePlayer() {
 			var p = self.selectedPlayer;
 			modelservice.savePlayer(p).then(function() {
-				$scope.modal.hide();
+				playerModal.hide();
 			}).catch(function(err) {
 				console.error(err);
 			});
