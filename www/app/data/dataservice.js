@@ -48,7 +48,7 @@
 
 		function _registerEventHandler(handler) {
             _eventHandlers.push(handler);
-        };
+        }
 
 		function _setDatabase() {
             _database = new PouchDB(_localdb);
@@ -62,8 +62,10 @@
 		}
 
 		function _startSync() {
-            console.log('start sync (datasvc) with server: ' + _remotedb);
-            _syncHandler = _database.sync(_remotedb, {live: true, retry: true})
+            console.log('start sync (datasvc) with server: ' + _remotedb);            
+            _syncHandler = $pouch.sync.call(_database, _remotedb, null);//$pouch.sync(_remotedb, null);
+            _syncHandler
+//            _syncHandler = _database.sync(_remotedb, {live: true, retry: true})
                 .on('change', function(change) {
                     console.log('sync_change: ' + change.direction + ' (' + change.change.docs.length + ')');
                     console.info(change);
@@ -98,7 +100,7 @@
         }
         
         function _startListening() {
-			_changeListener = $pouch.startListening( _database );
+			_changeListener = $pouch.startListening.call( _database );
 			_changeListener
 				.on("change", function(change) {
 					_eventHandlers.forEach(function(handler) {
@@ -150,6 +152,10 @@
 		function _getPlayers() {
             return _getEntities('player_idx', Player);
 		}
+        
+        function _getPlayer( id ) {
+            return $pouch.get.call(_database, id);
+        }
 
 		function _getTranscripts() {
             return _getEntities('transcript_idx', Transcript);
@@ -163,8 +169,8 @@
 //************************************************************
         
         function _addPlayer(p) {
-			$pouch.setDatabase( _database );
-            return $pouch.save(p).then(function(resp) {
+//			$pouch.setDatabase( _database );
+            return $pouch.save.call(_database, p).then(function(resp) {
                 console.log('_addPlayer completed (id: ' + resp.id + ')');
                 return p;
             }).catch(function(err) {
@@ -174,8 +180,8 @@
         }
         
         function _savePlayer(p) {
-			$pouch.setDatabase( _database );
-            return $pouch.save(p).then(function(resp) {
+//			$pouch.setDatabase( _database );
+            return $pouch.save.call(_database, p).then(function(resp) {
                 console.log('_savePlayer completed (rev: ' + resp.rev + ')');
                 return p;
             }).catch(function(err) {
@@ -185,8 +191,8 @@
         }
 
 		function _deletePlayer(p) {
-			$pouch.setDatabase( _database );
-            return $pouch.delete(p._id, p._rev).then(function(resp) {
+//			$pouch.setDatabase( _database );
+            return $pouch.delete.call(_database, p._id, p._rev).then(function(resp) {
                 console.log('_deletePlayer completed (rev: ' + resp.rev + ')');
                 return resp.id;
             }).catch(function(err) {
