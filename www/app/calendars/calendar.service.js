@@ -1,4 +1,4 @@
-// dataservice.js
+// calendar.js
 (function() {
     'use strict';
 

@@ -1,4 +1,4 @@
-// model.module.js
+// calendar.module.js
 (function() {
     'use strict';
 
