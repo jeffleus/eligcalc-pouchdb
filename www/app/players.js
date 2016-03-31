@@ -9,6 +9,7 @@
 	Players.$inject = ['$scope', '$ionicModal', 'modelservice', 'Player', 'PlayerMock'];
 	
     function Players($scope, $ionicModal, modelservice, Player, PlayerMock) {
+        /*jshint validthis: true*/
         var self = this;
 // Local Ctrl State
 		self.syncStatus = true;
