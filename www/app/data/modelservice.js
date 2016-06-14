@@ -31,13 +31,22 @@
 // Contorller Initialization
         _init();        
         function _init() {
-            //register handlers by entity type, pulling each from entity class definitions
-            _registerHandlers();
-            //cascade init the entities: players -> transcripts -> courses
-            _initPlayers()
-                .then( _initTranscripts() )
-                .then( _initCourses() );
-//            .then(dataservice.service.sync());
+            dataservice.ready().then( function(status) {
+                if (status) {
+                    //register handlers by entity type, pulling each from entity class definitions
+                    _registerHandlers();
+                    
+                    dataservice.getDoc('61888557-39fd-4a36-8e96-bcb56a44dc9e').then(function(doc) {
+                        console.log(doc);    
+                    });
+                    
+                    //cascade init the entities: players -> transcripts -> courses
+                    _initPlayers()
+                        .then( _initTranscripts() )
+                        .then( _initCourses() );
+        //            .then(dataservice.service.sync());
+                }
+            })
         }
 //**********************************************************************
 // Event handlers for Player changes/deletions

@@ -38,27 +38,65 @@
 		self.getTranscripts = _getTranscripts;
 		self.getCourses = _getCourses;
 		self.getLookups = _getLookups;
-
+        
+        
+        self.status = null;
+        self.ready = _ready;
+        self.getDoc = _getDoc;
+        
         _init();
         function _init() {
-            _setDatabase()
-                .then( _startSync() )
-                .then( _startListening() );
+            if (!self.status) {
+                self.status = _login()
+                    .then( _setDatabase )
+//                    .then( _destroy )
+                    .then( _startSync )
+                    .then( _startListening )
+                    .then( function() {
+                        console.log('should be ready now...');
+                        return true;
+                    })
+                    .catch(function(e) {
+                        console.error(e.name);
+                        return false;
+                    });
+            }
+            return self.status;
+        }
+        
+        function _ready() {
+            return _init();
         }
 
 		function _registerEventHandler(handler) {
             _eventHandlers.push(handler);
         }
+        
+        function _getDoc(id) {
+            return _database.get(id);
+        }
+        function _login() {
+            var userDb = new PouchDB(_remotedb, {skipSetup: true});
+            return userDb.login('jeffleus', 'my_new_pwd')
+                .then(function(u) {
+                    return userDb.getUser(u.name).then(function(user) {
+                        return user.cryptoKey;
+                    });
+                });
+        }
 
-		function _setDatabase() {
+		function _setDatabase( key ) {
             _database = new PouchDB(_localdb);
+            if (key) _database.crypto( key );
+//            if (_database.removeCrypto) _database.removeCrypto();
             self.database = _database;
             return $q.when( _database );
         }
 		
 		function _destroy() {
-			$pouch.setDatabase( _database );
-			$pouch.destroy();
+//			$pouch.setDatabase( _database );
+//			return $pouch.destroy();
+            return _database.destroy();
 		}
 
 		function _startSync() {
@@ -82,9 +120,7 @@
                     //$rootScope.$on('', err);
                 });
 
-			return $q.when( _syncHandler ).catch(function(err) {
-				console.error(err);
-			});
+			return $q.when( 'sync setup' );
         }
 
 		function _stopSync() {
@@ -113,7 +149,7 @@
 					console.error(error);
 				});
             
-            return $q.when( _changeListener );
+            return $q.when( 'listener setup' );
         }
         
         function _stopListening() {
